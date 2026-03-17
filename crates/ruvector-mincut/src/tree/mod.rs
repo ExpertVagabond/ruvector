@@ -120,11 +120,13 @@ impl DecompositionNode {
     }
 
     /// Check if this is a leaf node
+    #[must_use]
     pub fn is_leaf(&self) -> bool {
         self.children.is_empty()
     }
 
     /// Get the size of this subtree (number of vertices)
+    #[must_use]
     pub fn size(&self) -> usize {
         self.vertices.len()
     }
@@ -168,11 +170,13 @@ impl HierarchicalDecomposition {
     }
 
     /// Get the current minimum cut value
+    #[must_use]
     pub fn min_cut_value(&self) -> f64 {
         self.min_cut
     }
 
     /// Get the vertices on each side of the minimum cut
+    #[must_use]
     pub fn min_cut_partition(&self) -> (HashSet<VertexId>, HashSet<VertexId>) {
         if self.root.is_none() {
             return (HashSet::new(), HashSet::new());
@@ -408,11 +412,13 @@ impl HierarchicalDecomposition {
     }
 
     /// Get height of decomposition
+    #[must_use]
     pub fn height(&self) -> usize {
         self.height
     }
 
     /// Get number of nodes
+    #[must_use]
     pub fn num_nodes(&self) -> usize {
         self.nodes.len()
     }
@@ -431,14 +437,12 @@ pub struct LevelInfo {
 
 impl HierarchicalDecomposition {
     /// Get information about each level
+    #[must_use]
     pub fn level_info(&self) -> Vec<LevelInfo> {
         let mut levels: HashMap<usize, Vec<f64>> = HashMap::new();
 
         for node in &self.nodes {
-            levels
-                .entry(node.level)
-                .or_insert_with(Vec::new)
-                .push(node.cut_value);
+            levels.entry(node.level).or_default().push(node.cut_value);
         }
 
         let mut result: Vec<LevelInfo> = levels

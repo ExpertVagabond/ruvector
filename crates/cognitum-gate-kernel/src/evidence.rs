@@ -162,10 +162,10 @@ pub const fn log_e_to_f32(log_e: LogEValue) -> f32 {
     // log2(e) = log_e / 65536
     // e = 2^(log_e / 65536)
     // Approximation for no_std
-    let log2_val = (log_e as f32) / 65536.0;
+
     // 2^x approximation using e^(x * ln(2))
     // For simplicity, we just return the log value scaled
-    log2_val
+    (log_e as f32) / 65536.0
 }
 
 /// Convert f32 e-value to log representation
@@ -193,7 +193,7 @@ pub fn f32_to_log_e(e: f32) -> LogEValue {
 ///
 /// OPTIMIZATION: Returns pre-computed constants for known observation types
 #[inline(always)]
-pub const fn log_lr_for_obs_type(obs_type: u8, flags: u8, value: u16) -> LogEValue {
+pub const fn log_lr_for_obs_type(obs_type: u8, flags: u8, _value: u16) -> LogEValue {
     match obs_type {
         Observation::TYPE_CONNECTIVITY => {
             if flags != 0 {
@@ -511,7 +511,7 @@ impl EvidenceAccumulator {
             *self.window.get_unchecked_mut(idx) = ObsRecord { obs, tick };
         }
         // OPTIMIZATION: Bit mask for power-of-2 wrap (64 = 0x40, mask = 0x3F)
-        self.window_head = ((self.window_head + 1) & (WINDOW_SIZE as u16 - 1));
+        self.window_head = (self.window_head + 1) & (WINDOW_SIZE as u16 - 1);
         if (self.window_count as usize) < WINDOW_SIZE {
             self.window_count += 1;
         }
@@ -599,8 +599,8 @@ impl EvidenceAccumulator {
                 // Confidence-based: 1.0 + confidence (1.0 to 2.0)
                 // log2(1 + x) where x in [0,1]
                 // Approximation: x * 65536 / ln(2) for small x
-                let confidence_fixed = (obs.value as i32) >> 1; // Scale 0-65535 to ~0-32768
-                confidence_fixed
+                // Scale 0-65535 to ~0-32768
+                (obs.value as i32) >> 1
             }
             Observation::TYPE_FLOW => {
                 // Flow-based: needs f32 path

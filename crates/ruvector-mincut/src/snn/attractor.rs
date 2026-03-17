@@ -17,13 +17,11 @@
 //! for subpolynomial mincut computation.
 
 use super::{
-    compute_energy, compute_synchrony,
+    compute_energy,
     network::{LayerConfig, NetworkConfig, SpikingNetwork},
-    synapse::SynapseMatrix,
     SimTime, Spike,
 };
-use crate::graph::{DynamicGraph, VertexId, Weight};
-use std::time::Duration;
+use crate::graph::{DynamicGraph, VertexId};
 
 /// Configuration for attractor dynamics
 #[derive(Debug, Clone)]
@@ -62,7 +60,7 @@ pub struct EnergyLandscape {
     pub energy: f64,
     /// Energy gradient (rate of change)
     pub gradient: f64,
-    /// MinCut contribution
+    /// `MinCut` contribution
     pub mincut_component: f64,
     /// Synchrony contribution
     pub synchrony_component: f64,
@@ -72,6 +70,7 @@ pub struct EnergyLandscape {
 
 impl EnergyLandscape {
     /// Create new energy landscape
+    #[must_use]
     pub fn new() -> Self {
         Self {
             energy: 0.0,
@@ -103,11 +102,13 @@ impl EnergyLandscape {
     }
 
     /// Check if at attractor (gradient near zero)
+    #[must_use]
     pub fn at_attractor(&self, epsilon: f64) -> bool {
         self.gradient.abs() < epsilon
     }
 
     /// Get energy variance over recent history
+    #[must_use]
     pub fn variance(&self) -> f64 {
         if self.history.len() < 2 {
             return f64::MAX;
@@ -120,6 +121,7 @@ impl EnergyLandscape {
     }
 
     /// Check for oscillation (sign changes in gradient)
+    #[must_use]
     pub fn is_oscillating(&self, window: usize) -> bool {
         if self.history.len() < window + 1 {
             return false;
@@ -195,7 +197,7 @@ impl AttractorDynamics {
         let spikes = self.snn.step();
 
         // Record spikes for STDP
-        self.spike_history.extend(spikes.iter().cloned());
+        self.spike_history.extend(spikes.iter().copied());
 
         // 2. Spikes modulate edge weights via STDP
         self.apply_stdp_weight_updates(&spikes);
@@ -266,10 +268,11 @@ impl AttractorDynamics {
 
         for i in 0..sync_matrix.len() {
             for j in (i + 1)..sync_matrix[i].len() {
-                if sync_matrix[i][j] >= self.config.sync_threshold {
-                    if i < vertices.len() && j < vertices.len() {
-                        skip_edges.insert((vertices[i], vertices[j]));
-                    }
+                if sync_matrix[i][j] >= self.config.sync_threshold
+                    && i < vertices.len()
+                    && j < vertices.len()
+                {
+                    skip_edges.insert((vertices[i], vertices[j]));
                 }
             }
         }
@@ -300,7 +303,7 @@ impl AttractorDynamics {
         }
 
         // Build compact adjacency representation (Vec-based for speed)
-        let mut vertex_to_idx: std::collections::HashMap<VertexId, usize> =
+        let vertex_to_idx: std::collections::HashMap<VertexId, usize> =
             vertices.iter().enumerate().map(|(i, &v)| (v, i)).collect();
 
         let mut adj_weights: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
@@ -371,7 +374,7 @@ impl AttractorDynamics {
 
         // Try all 2^(n-1) - 1 partitions (fixing first vertex)
         let mut best_cut = f64::INFINITY;
-        let first = vertices[0];
+        let _first = vertices[0];
 
         for mask in 1..(1u64 << (n - 1)) {
             let mut cut_weight = 0.0;
@@ -589,10 +592,11 @@ impl AttractorDynamics {
 
         for i in 0..sync_matrix.len() {
             for j in (i + 1)..sync_matrix[i].len() {
-                if sync_matrix[i][j] >= self.config.sync_threshold {
-                    if i < vertices.len() && j < vertices.len() {
-                        skip.push((vertices[i], vertices[j]));
-                    }
+                if sync_matrix[i][j] >= self.config.sync_threshold
+                    && i < vertices.len()
+                    && j < vertices.len()
+                {
+                    skip.push((vertices[i], vertices[j]));
                 }
             }
         }

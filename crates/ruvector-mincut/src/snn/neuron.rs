@@ -8,7 +8,7 @@
 //! τ_m * dV/dt = -(V - V_rest) + R * I(t)
 //! ```
 //!
-//! When V >= θ: emit spike, V → V_reset, enter refractory period
+//! When V >= θ: emit spike, V → `V_reset`, enter refractory period
 //!
 //! ## Features
 //!
@@ -19,10 +19,9 @@
 
 use super::{SimTime, Spike};
 use rayon::prelude::*;
-use std::collections::VecDeque;
 
 /// Threshold for using parallel neuron updates (overhead not worth it for small populations)
-/// Set high because neuron.step() is very fast, parallel overhead dominates for smaller sizes.
+/// Set high because `neuron.step()` is very fast, parallel overhead dominates for smaller sizes.
 const PARALLEL_THRESHOLD: usize = 2000;
 
 /// Configuration for LIF neuron
@@ -110,6 +109,7 @@ pub struct LIFNeuron {
 
 impl LIFNeuron {
     /// Create a new LIF neuron with given ID
+    #[must_use]
     pub fn new(id: usize) -> Self {
         Self {
             id,
@@ -119,6 +119,7 @@ impl LIFNeuron {
     }
 
     /// Create a new LIF neuron with custom configuration
+    #[must_use]
     pub fn with_config(id: usize, config: NeuronConfig) -> Self {
         let mut state = NeuronState::default();
         state.threshold = config.threshold;
@@ -179,7 +180,7 @@ impl LIFNeuron {
         // Homeostatic plasticity: adjust threshold based on firing rate
         if self.config.homeostatic {
             let rate_error = self.state.spike_rate - self.config.target_rate;
-            let d_base_thresh = rate_error * dt / self.config.tau_homeostatic;
+            let _d_base_thresh = rate_error * dt / self.config.tau_homeostatic;
             // Only apply to base threshold, not adapted part
             // This is a simplification - full implementation would track separately
         }
@@ -196,16 +197,19 @@ impl LIFNeuron {
     }
 
     /// Get time since last spike
+    #[must_use]
     pub fn time_since_spike(&self, current_time: SimTime) -> f64 {
         current_time - self.state.last_spike_time
     }
 
     /// Check if neuron is in refractory period
+    #[must_use]
     pub fn is_refractory(&self) -> bool {
         self.state.refrac_remaining > 0.0
     }
 
     /// Get membrane potential
+    #[must_use]
     pub fn membrane_potential(&self) -> f64 {
         self.state.v
     }
@@ -216,6 +220,7 @@ impl LIFNeuron {
     }
 
     /// Get current threshold
+    #[must_use]
     pub fn threshold(&self) -> f64 {
         self.state.threshold
     }
@@ -234,6 +239,7 @@ pub struct SpikeTrain {
 
 impl SpikeTrain {
     /// Create a new empty spike train
+    #[must_use]
     pub fn new(neuron_id: usize) -> Self {
         Self {
             neuron_id,
@@ -243,6 +249,7 @@ impl SpikeTrain {
     }
 
     /// Create with custom window size
+    #[must_use]
     pub fn with_window(neuron_id: usize, max_window: f64) -> Self {
         Self {
             neuron_id,
@@ -266,11 +273,13 @@ impl SpikeTrain {
     }
 
     /// Get number of spikes in the train
+    #[must_use]
     pub fn count(&self) -> usize {
         self.spike_times.len()
     }
 
     /// Compute instantaneous spike rate (spikes/ms)
+    #[must_use]
     pub fn spike_rate(&self, window: f64) -> f64 {
         if self.spike_times.is_empty() {
             return 0.0;
@@ -287,6 +296,7 @@ impl SpikeTrain {
     }
 
     /// Compute inter-spike interval statistics
+    #[must_use]
     pub fn mean_isi(&self) -> Option<f64> {
         if self.spike_times.len() < 2 {
             return None;
@@ -301,6 +311,7 @@ impl SpikeTrain {
     }
 
     /// Get coefficient of variation of ISI
+    #[must_use]
     pub fn cv_isi(&self) -> Option<f64> {
         let mean = self.mean_isi()?;
         if mean == 0.0 {
@@ -320,6 +331,7 @@ impl SpikeTrain {
     /// Convert spike train to binary pattern (temporal encoding)
     ///
     /// Safely handles potential overflow in bin calculation.
+    #[must_use]
     pub fn to_pattern(&self, start: SimTime, bin_size: f64, num_bins: usize) -> Vec<bool> {
         let mut pattern = vec![false; num_bins];
 
@@ -360,6 +372,7 @@ impl SpikeTrain {
     /// Uses O(n log n) sliding window algorithm instead of O(n²) pairwise comparison.
     /// Optimized to skip sorting when spike trains are already sorted (typical case).
     /// Uses binary search for initial window position.
+    #[must_use]
     pub fn cross_correlation(&self, other: &SpikeTrain, max_lag: f64, bin_size: f64) -> Vec<f64> {
         // Guard against invalid parameters
         if bin_size <= 0.0 || max_lag <= 0.0 {
@@ -460,9 +473,10 @@ pub struct NeuronPopulation {
 
 impl NeuronPopulation {
     /// Create a new population with n neurons
+    #[must_use]
     pub fn new(n: usize) -> Self {
-        let neurons: Vec<_> = (0..n).map(|i| LIFNeuron::new(i)).collect();
-        let spike_trains: Vec<_> = (0..n).map(|i| SpikeTrain::new(i)).collect();
+        let neurons: Vec<_> = (0..n).map(LIFNeuron::new).collect();
+        let spike_trains: Vec<_> = (0..n).map(SpikeTrain::new).collect();
 
         Self {
             neurons,
@@ -472,11 +486,12 @@ impl NeuronPopulation {
     }
 
     /// Create population with custom configuration
+    #[must_use]
     pub fn with_config(n: usize, config: NeuronConfig) -> Self {
         let neurons: Vec<_> = (0..n)
             .map(|i| LIFNeuron::with_config(i, config.clone()))
             .collect();
-        let spike_trains: Vec<_> = (0..n).map(|i| SpikeTrain::new(i)).collect();
+        let spike_trains: Vec<_> = (0..n).map(SpikeTrain::new).collect();
 
         Self {
             neurons,
@@ -486,6 +501,7 @@ impl NeuronPopulation {
     }
 
     /// Get number of neurons
+    #[must_use]
     pub fn size(&self) -> usize {
         self.neurons.len()
     }
@@ -544,12 +560,14 @@ impl NeuronPopulation {
     }
 
     /// Get population spike rate
+    #[must_use]
     pub fn population_rate(&self, window: f64) -> f64 {
         let total: f64 = self.spike_trains.iter().map(|t| t.spike_rate(window)).sum();
         total / self.neurons.len() as f64
     }
 
     /// Compute population synchrony
+    #[must_use]
     pub fn synchrony(&self, window: f64) -> f64 {
         // Collect recent spikes
         let mut all_spikes = Vec::new();

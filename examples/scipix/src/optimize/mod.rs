@@ -83,7 +83,7 @@ pub trait OptimizedOp<T> {
 }
 
 /// Optimization level configuration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OptLevel {
     /// No optimizations, scalar code only
     None,
@@ -92,13 +92,8 @@ pub enum OptLevel {
     /// Use SIMD + parallel processing
     Parallel,
     /// All optimizations including memory optimizations
+    #[default]
     Full,
-}
-
-impl Default for OptLevel {
-    fn default() -> Self {
-        OptLevel::Full
-    }
 }
 
 /// Global optimization configuration

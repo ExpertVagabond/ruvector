@@ -4,7 +4,7 @@
 //! for vector data structures.
 
 use alloc::vec::Vec;
-use core::ops::{Add, Mul, Neg, Sub};
+use core::ops::{Add, Neg, Sub};
 use smallvec::SmallVec;
 
 use crate::error::{DeltaError, Result};
@@ -67,8 +67,10 @@ impl<T: Default + PartialEq> DeltaOp<T> {
 /// A delta value that can be sparse or dense
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Default)]
 pub enum DeltaValue<T> {
     /// No change (identity)
+    #[default]
     Identity,
 
     /// Sparse delta: only non-zero changes stored
@@ -79,12 +81,6 @@ pub enum DeltaValue<T> {
 
     /// Full replacement (for large changes)
     Replace(Vec<T>),
-}
-
-impl<T: Default + Clone + PartialEq> Default for DeltaValue<T> {
-    fn default() -> Self {
-        Self::Identity
-    }
 }
 
 impl<T> DeltaValue<T>

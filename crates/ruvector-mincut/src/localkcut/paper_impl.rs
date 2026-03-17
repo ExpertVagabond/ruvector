@@ -7,7 +7,7 @@
 //! # Key Properties
 //!
 //! - **Deterministic**: No randomness - same input always produces same output
-//! - **Bounded Range**: Searches for cuts with value ≤ budget_k
+//! - **Bounded Range**: Searches for cuts with value ≤ `budget_k`
 //! - **Local Exploration**: BFS-based exploration within bounded radius
 //! - **Witness-Based**: Returns witnesses that certify found cuts
 //!
@@ -18,7 +18,7 @@
 //! 2. Expand outward layer by layer (BFS)
 //! 3. Track boundary edges at each layer
 //! 4. If boundary ≤ budget at any layer, create witness
-//! 5. Return smallest cut found or NoneInLocality
+//! 5. Return smallest cut found or `NoneInLocality`
 
 use crate::graph::{DynamicGraph, VertexId};
 use crate::instance::WitnessHandle;
@@ -41,7 +41,7 @@ pub struct LocalKCutQuery {
 
     /// Maximum acceptable cut value
     ///
-    /// The algorithm only returns cuts with value ≤ budget_k.
+    /// The algorithm only returns cuts with value ≤ `budget_k`.
     /// This bounds the search space and ensures polynomial time.
     pub budget_k: u64,
 
@@ -58,7 +58,7 @@ pub struct LocalKCutQuery {
 /// exists in the local region around the seed vertices.
 #[derive(Debug, Clone)]
 pub enum LocalKCutResult {
-    /// Found a cut with value ≤ budget_k
+    /// Found a cut with value ≤ `budget_k`
     ///
     /// The witness certifies the cut and can be used to verify
     /// correctness or reconstruct the partition.
@@ -69,7 +69,7 @@ pub enum LocalKCutResult {
         cut_value: u64,
     },
 
-    /// No cut ≤ budget_k found in the local region
+    /// No cut ≤ `budget_k` found in the local region
     ///
     /// This does not mean no such cut exists globally, only that
     /// none was found within the search radius from the seeds.
@@ -91,7 +91,7 @@ pub trait LocalKCutOracle: Send + Sync {
     ///
     /// # Returns
     ///
-    /// Either a witness for a cut ≤ budget_k, or NoneInLocality
+    /// Either a witness for a cut ≤ `budget_k`, or `NoneInLocality`
     ///
     /// # Determinism
     ///
@@ -120,6 +120,7 @@ impl DeterministicFamilyGenerator {
     /// # Returns
     ///
     /// A new generator with deterministic properties
+    #[must_use]
     pub fn new(max_size: usize) -> Self {
         Self { max_size }
     }
@@ -167,7 +168,7 @@ impl Default for DeterministicFamilyGenerator {
 
 /// Deterministic Local K-Cut algorithm
 ///
-/// Implements the LocalKCutOracle trait using a deterministic BFS-based
+/// Implements the `LocalKCutOracle` trait using a deterministic BFS-based
 /// exploration strategy. The algorithm:
 ///
 /// 1. Starts BFS from seed vertices
@@ -214,6 +215,7 @@ impl DeterministicLocalKCut {
     ///
     /// let oracle = DeterministicLocalKCut::new(10);
     /// ```
+    #[must_use]
     pub fn new(max_radius: usize) -> Self {
         Self {
             max_radius,
@@ -231,6 +233,7 @@ impl DeterministicLocalKCut {
     /// # Returns
     ///
     /// A new oracle with custom configuration
+    #[must_use]
     pub fn with_family_generator(
         max_radius: usize,
         family_generator: DeterministicFamilyGenerator,
@@ -401,7 +404,7 @@ impl DeterministicLocalKCut {
         let mut membership = RoaringBitmap::new();
 
         for &v in vertices {
-            if v <= u32::MAX as u64 {
+            if u32::try_from(v).is_ok() {
                 membership.insert(v as u32);
             }
         }

@@ -10,7 +10,7 @@
 
 use crate::graph::VertexId;
 use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::RwLock;
 
 /// Configuration for path distance cache
@@ -54,6 +54,7 @@ pub struct CacheStats {
 
 impl CacheStats {
     /// Get hit rate
+    #[must_use]
     pub fn hit_rate(&self) -> f64 {
         let total = self.hits + self.misses;
         if total > 0 {
@@ -133,11 +134,13 @@ pub struct PathDistanceCache {
 
 impl PathDistanceCache {
     /// Create new cache with default config
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(CacheConfig::default())
     }
 
     /// Create with custom config
+    #[must_use]
     pub fn with_config(config: CacheConfig) -> Self {
         Self {
             config,
@@ -316,7 +319,7 @@ impl PathDistanceCache {
 
         // Find frequently co-occurring vertex pairs
         let mut vertex_frequency: HashMap<VertexId, usize> = HashMap::new();
-        for key in history.iter() {
+        for key in history {
             *vertex_frequency.entry(key.source).or_insert(0) += 1;
             *vertex_frequency.entry(key.target).or_insert(0) += 1;
         }

@@ -166,6 +166,7 @@ pub struct ApproxMinCutResult {
 
 impl ApproxMinCut {
     /// Create new approximate min-cut structure
+    #[must_use]
     pub fn new(config: ApproxMinCutConfig) -> Self {
         Self {
             edges: Vec::new(),
@@ -179,6 +180,7 @@ impl ApproxMinCut {
     }
 
     /// Create with default configuration
+    #[must_use]
     pub fn with_epsilon(epsilon: f64) -> Self {
         Self::new(ApproxMinCutConfig {
             epsilon,
@@ -271,6 +273,7 @@ impl ApproxMinCut {
     }
 
     /// Check if graph is connected
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         if self.vertices.is_empty() {
             return true;
@@ -298,16 +301,19 @@ impl ApproxMinCut {
     }
 
     /// Get vertex count
+    #[must_use]
     pub fn vertex_count(&self) -> usize {
         self.vertices.len()
     }
 
     /// Get edge count
+    #[must_use]
     pub fn edge_count(&self) -> usize {
         self.edges.len()
     }
 
     /// Get statistics
+    #[must_use]
     pub fn stats(&self) -> &ApproxMinCutStats {
         &self.stats
     }

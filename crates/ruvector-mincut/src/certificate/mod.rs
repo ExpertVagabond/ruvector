@@ -3,7 +3,7 @@
 //! Provides provable certificates that a minimum cut is correct.
 //! Each certificate includes:
 //! - The witnesses that define the cut
-//! - The LocalKCut responses that prove no smaller cut exists
+//! - The `LocalKCut` responses that prove no smaller cut exists
 //! - A proof structure for verification
 
 use crate::graph::{EdgeId, VertexId};
@@ -34,7 +34,7 @@ pub struct CutCertificate {
     pub witnesses: Vec<WitnessHandle>,
     /// Witness summaries for serialization
     pub witness_summaries: Vec<WitnessSummary>,
-    /// LocalKCut responses that prove no smaller cut exists
+    /// `LocalKCut` responses that prove no smaller cut exists
     pub localkcut_responses: Vec<LocalKCutResponse>,
     /// Index of the best witness (smallest boundary)
     pub best_witness_idx: Option<usize>,
@@ -45,7 +45,7 @@ pub struct CutCertificate {
     pub version: u32,
 }
 
-/// Serde serialization for SystemTime
+/// Serde serialization for `SystemTime`
 mod system_time_serde {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use std::time::{SystemTime, UNIX_EPOCH};
@@ -67,7 +67,7 @@ mod system_time_serde {
     }
 }
 
-/// A response from the LocalKCut oracle
+/// A response from the `LocalKCut` oracle
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LocalKCutResponse {
     /// The query that was made
@@ -81,7 +81,8 @@ pub struct LocalKCutResponse {
 }
 
 impl LocalKCutResponse {
-    /// Create a new LocalKCut response
+    /// Create a new `LocalKCut` response
+    #[must_use]
     pub fn new(
         query: CertLocalKCutQuery,
         result: LocalKCutResultSummary,
@@ -97,7 +98,7 @@ impl LocalKCutResponse {
     }
 }
 
-/// A query to the LocalKCut oracle (certificate version)
+/// A query to the `LocalKCut` oracle (certificate version)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CertLocalKCutQuery {
     /// Seed vertices for the search
@@ -109,7 +110,8 @@ pub struct CertLocalKCutQuery {
 }
 
 impl CertLocalKCutQuery {
-    /// Create a new LocalKCut query
+    /// Create a new `LocalKCut` query
+    #[must_use]
     pub fn new(seed_vertices: Vec<VertexId>, budget_k: u64, radius: usize) -> Self {
         Self {
             seed_vertices,
@@ -119,7 +121,7 @@ impl CertLocalKCutQuery {
     }
 }
 
-/// Summary of LocalKCut result
+/// Summary of `LocalKCut` result
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LocalKCutResultSummary {
     /// Found a cut within the budget
@@ -148,6 +150,7 @@ pub struct UpdateTrigger {
 
 impl UpdateTrigger {
     /// Create a new update trigger
+    #[must_use]
     pub fn new(
         update_type: UpdateType,
         edge_id: EdgeId,
@@ -177,6 +180,7 @@ pub const CERTIFICATE_VERSION: u32 = 1;
 
 impl CutCertificate {
     /// Create a new empty certificate
+    #[must_use]
     pub fn new() -> Self {
         Self {
             witnesses: Vec::new(),
@@ -189,6 +193,7 @@ impl CutCertificate {
     }
 
     /// Create a certificate with initial witnesses
+    #[must_use]
     pub fn with_witnesses(witnesses: Vec<WitnessHandle>) -> Self {
         let mut cert = Self::new();
         let summaries: Vec<WitnessSummary> = witnesses
@@ -204,7 +209,7 @@ impl CutCertificate {
         cert
     }
 
-    /// Add a LocalKCut response to the certificate
+    /// Add a `LocalKCut` response to the certificate
     pub fn add_response(&mut self, response: LocalKCutResponse) {
         self.localkcut_responses.push(response);
     }
@@ -268,12 +273,17 @@ impl CutCertificate {
     }
 
     /// Get the certified minimum cut value
+    #[must_use]
     pub fn certified_value(&self) -> Option<u64> {
-        self.best_witness_idx
-            .and_then(|idx| self.witnesses.get(idx).map(|w| w.boundary_size()))
+        self.best_witness_idx.and_then(|idx| {
+            self.witnesses
+                .get(idx)
+                .map(super::instance::witness::WitnessHandle::boundary_size)
+        })
     }
 
     /// Get the best witness
+    #[must_use]
     pub fn best_witness(&self) -> Option<&WitnessHandle> {
         self.best_witness_idx
             .and_then(|idx| self.witnesses.get(idx))
@@ -292,21 +302,25 @@ impl CutCertificate {
     }
 
     /// Get number of witnesses
+    #[must_use]
     pub fn num_witnesses(&self) -> usize {
         self.witnesses.len()
     }
 
-    /// Get number of LocalKCut responses
+    /// Get number of `LocalKCut` responses
+    #[must_use]
     pub fn num_responses(&self) -> usize {
         self.localkcut_responses.len()
     }
 
     /// Get all witnesses
+    #[must_use]
     pub fn witnesses(&self) -> &[WitnessHandle] {
         &self.witnesses
     }
 
-    /// Get all LocalKCut responses
+    /// Get all `LocalKCut` responses
+    #[must_use]
     pub fn responses(&self) -> &[LocalKCutResponse] {
         &self.localkcut_responses
     }
@@ -330,7 +344,7 @@ pub enum CertificateError {
         /// Actual boundary value
         actual: u64,
     },
-    /// Missing LocalKCut proof for a required operation
+    /// Missing `LocalKCut` proof for a required operation
     MissingLocalKCutProof {
         /// Description of missing proof
         operation: String,
@@ -367,31 +381,29 @@ impl std::fmt::Display for CertificateError {
             Self::InconsistentBoundary { expected, actual } => {
                 write!(
                     f,
-                    "Inconsistent boundary: expected {}, got {}",
-                    expected, actual
+                    "Inconsistent boundary: expected {expected}, got {actual}"
                 )
             }
             Self::MissingLocalKCutProof { operation } => {
-                write!(f, "Missing LocalKCut proof for operation: {}", operation)
+                write!(f, "Missing LocalKCut proof for operation: {operation}")
             }
             Self::InvalidWitnessIndex { index, max } => {
-                write!(f, "Invalid witness index {} (max: {})", index, max)
+                write!(f, "Invalid witness index {index} (max: {max})")
             }
             Self::InvalidQuery { reason } => {
-                write!(f, "Invalid query: {}", reason)
+                write!(f, "Invalid query: {reason}")
             }
             Self::IncompatibleVersion { found, expected } => {
                 write!(
                     f,
-                    "Incompatible version: found {}, expected {}",
-                    found, expected
+                    "Incompatible version: found {found}, expected {expected}"
                 )
             }
             Self::SerializationError(msg) => {
-                write!(f, "Serialization error: {}", msg)
+                write!(f, "Serialization error: {msg}")
             }
             Self::DeserializationError(msg) => {
-                write!(f, "Deserialization error: {}", msg)
+                write!(f, "Deserialization error: {msg}")
             }
         }
     }

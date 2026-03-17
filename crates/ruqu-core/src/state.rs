@@ -378,9 +378,9 @@ impl QuantumState {
                         j ^= 1usize << qubit;
                         // Y|0> = i|1>,  Y|1> = -i|0>
                         if bit == 0 {
-                            phase = phase * Complex::I;
+                            phase *= Complex::I;
                         } else {
-                            phase = phase * Complex::new(0.0, -1.0);
+                            phase *= Complex::new(0.0, -1.0);
                         }
                     }
                     PauliOp::Z => {

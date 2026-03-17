@@ -36,7 +36,7 @@ impl SimdTraversal {
     }
 
     /// Perform batched BFS with SIMD-optimized neighbor processing
-    pub fn simd_bfs<F>(&self, start_nodes: &[u64], mut visit_fn: F) -> Vec<u64>
+    pub fn simd_bfs<F>(&self, start_nodes: &[u64], visit_fn: F) -> Vec<u64>
     where
         F: FnMut(u64) -> Vec<u64> + Send + Sync,
     {
@@ -72,7 +72,7 @@ impl SimdTraversal {
             }
 
             // Process batch in parallel with SIMD-friendly chunking
-            let chunk_size = (batch.len() + self.num_threads - 1) / self.num_threads;
+            let chunk_size = batch.len().div_ceil(self.num_threads);
 
             batch.par_chunks(chunk_size).for_each(|chunk| {
                 for &node in chunk {
@@ -194,7 +194,7 @@ impl SimdTraversal {
     }
 
     /// Parallel DFS with work-stealing for load balancing
-    pub fn parallel_dfs<F>(&self, start_node: u64, mut visit_fn: F) -> Vec<u64>
+    pub fn parallel_dfs<F>(&self, start_node: u64, visit_fn: F) -> Vec<u64>
     where
         F: FnMut(u64) -> Vec<u64> + Send + Sync,
     {

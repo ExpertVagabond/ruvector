@@ -1,4 +1,4 @@
-//! # Unified Cognitive MinCut Engine
+//! # Unified Cognitive `MinCut` Engine
 //!
 //! Combines all six integration layers into a unified system.
 //!
@@ -43,16 +43,15 @@ use super::{
     attractor::{AttractorConfig, AttractorDynamics, EnergyLandscape},
     causal::{CausalConfig, CausalDiscoverySNN, CausalGraph, GraphEvent, GraphEventType},
     morphogenetic::{MorphConfig, MorphogeneticSNN, TuringPattern},
-    optimizer::{GraphAction, NeuralGraphOptimizer, OptimizationResult, OptimizerConfig},
+    optimizer::{GraphAction, NeuralGraphOptimizer, OptimizerConfig},
     strange_loop::{MetaAction, MetaCognitiveMinCut, StrangeLoopConfig},
     time_crystal::{CPGConfig, TimeCrystalCPG},
     SimTime, Spike,
 };
-use crate::graph::{DynamicGraph, VertexId, Weight};
-use std::collections::HashMap;
+use crate::graph::{DynamicGraph, VertexId};
 use std::time::{Duration, Instant};
 
-/// Configuration for the Cognitive MinCut Engine
+/// Configuration for the Cognitive `MinCut` Engine
 #[derive(Debug, Clone)]
 pub struct EngineConfig {
     /// Enable attractor dynamics layer
@@ -157,7 +156,7 @@ pub enum OperationMode {
 /// Maximum event history size to prevent memory exhaustion
 const MAX_EVENT_HISTORY: usize = 10_000;
 
-/// The unified Cognitive MinCut Engine
+/// The unified Cognitive `MinCut` Engine
 pub struct CognitiveMinCutEngine {
     /// Primary graph being optimized
     graph: DynamicGraph,
@@ -186,7 +185,7 @@ pub struct CognitiveMinCutEngine {
 }
 
 impl CognitiveMinCutEngine {
-    /// Create a new Cognitive MinCut Engine
+    /// Create a new Cognitive `MinCut` Engine
     pub fn new(graph: DynamicGraph, config: EngineConfig) -> Self {
         let attractor = if config.enable_attractors {
             Some(AttractorDynamics::new(
@@ -519,30 +518,37 @@ impl CognitiveMinCutEngine {
 
     /// Get causal graph (if available)
     pub fn causal_graph(&self) -> Option<CausalGraph> {
-        self.causal.as_ref().map(|c| c.extract_causal_graph())
+        self.causal
+            .as_ref()
+            .map(super::causal::CausalDiscoverySNN::extract_causal_graph)
     }
 
     /// Get current phase (from time crystal)
     pub fn current_phase(&self) -> Option<usize> {
-        self.time_crystal.as_ref().map(|tc| tc.current_phase())
+        self.time_crystal
+            .as_ref()
+            .map(super::time_crystal::TimeCrystalCPG::current_phase)
     }
 
     /// Get attractor status
     pub fn at_attractor(&self) -> bool {
         self.attractor
             .as_ref()
-            .map(|a| a.reached_attractor())
-            .unwrap_or(false)
+            .is_some_and(super::attractor::AttractorDynamics::reached_attractor)
     }
 
     /// Get morphogenetic pattern
     pub fn pattern(&self) -> Option<TuringPattern> {
-        self.morphogenetic.as_ref().map(|m| m.detect_pattern())
+        self.morphogenetic
+            .as_ref()
+            .map(super::morphogenetic::MorphogeneticSNN::detect_pattern)
     }
 
     /// Get energy landscape
     pub fn energy_landscape(&self) -> Option<&EnergyLandscape> {
-        self.attractor.as_ref().map(|a| a.energy_landscape())
+        self.attractor
+            .as_ref()
+            .map(super::attractor::AttractorDynamics::energy_landscape)
     }
 
     /// Subpolynomial search exploiting all learned structures

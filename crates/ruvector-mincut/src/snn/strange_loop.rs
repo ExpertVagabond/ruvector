@@ -13,8 +13,7 @@
 
 use super::{
     network::{LayerConfig, NetworkConfig, SpikingNetwork},
-    neuron::{LIFNeuron, NeuronConfig, NeuronPopulation},
-    SimTime, Spike,
+    SimTime,
 };
 use crate::graph::{DynamicGraph, VertexId};
 use std::collections::VecDeque;
@@ -107,6 +106,7 @@ pub struct MetaNeuron {
 
 impl MetaNeuron {
     /// Create a new meta-neuron
+    #[must_use]
     pub fn new(id: usize, window: usize) -> Self {
         Self {
             id,
@@ -151,7 +151,7 @@ impl MetaNeuron {
     }
 }
 
-/// Meta-Cognitive MinCut with Strange Loop
+/// Meta-Cognitive `MinCut` with Strange Loop
 pub struct MetaCognitiveMinCut {
     /// Level 0: Object graph being optimized
     object_graph: DynamicGraph,
@@ -313,15 +313,15 @@ impl MetaCognitiveMinCut {
                 // Add edges where observer activity is high
                 let hot_pairs = self.high_correlation_pairs(*threshold);
                 for (u, v) in hot_pairs {
-                    if !self.object_graph.has_edge(u, v) {
-                        let _ = self.object_graph.insert_edge(u, v, 1.0);
-                    } else {
+                    if self.object_graph.has_edge(u, v) {
                         // Strengthen existing edge
                         if let Some(edge) = self.object_graph.get_edge(u, v) {
                             let _ = self
                                 .object_graph
                                 .update_edge_weight(u, v, edge.weight * 1.1);
                         }
+                    } else {
+                        let _ = self.object_graph.insert_edge(u, v, 1.0);
                     }
                 }
             }

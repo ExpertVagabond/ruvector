@@ -2,7 +2,7 @@
 //!
 //! Logs every witness change with full provenance.
 
-use super::{CertLocalKCutQuery, LocalKCutResponse, LocalKCutResultSummary, UpdateTrigger};
+use super::{LocalKCutResponse, UpdateTrigger};
 use crate::instance::WitnessHandle;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
@@ -24,6 +24,7 @@ pub struct AuditEntry {
 
 impl AuditEntry {
     /// Create a new audit entry
+    #[must_use]
     pub fn new(id: u64, entry_type: AuditEntryType, data: AuditData) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -48,9 +49,9 @@ pub enum AuditEntryType {
     WitnessUpdated,
     /// A witness was evicted from the cache
     WitnessEvicted,
-    /// A LocalKCut query was made
+    /// A `LocalKCut` query was made
     LocalKCutQuery,
-    /// A LocalKCut response was received
+    /// A `LocalKCut` response was received
     LocalKCutResponse,
     /// A certificate was created
     CertificateCreated,
@@ -118,6 +119,7 @@ pub struct AuditLogger {
 
 impl AuditLogger {
     /// Create a new audit logger with specified capacity
+    #[must_use]
     pub fn new(max_entries: usize) -> Self {
         Self {
             entries: Arc::new(RwLock::new(VecDeque::with_capacity(max_entries))),
@@ -178,7 +180,7 @@ impl AuditLogger {
         );
     }
 
-    /// Log LocalKCut query
+    /// Log `LocalKCut` query
     pub fn log_query(&self, budget: u64, radius: usize, seeds: Vec<u64>) {
         self.log(
             AuditEntryType::LocalKCutQuery,
@@ -190,7 +192,7 @@ impl AuditLogger {
         );
     }
 
-    /// Log LocalKCut response
+    /// Log `LocalKCut` response
     pub fn log_response(&self, response: &LocalKCutResponse) {
         let (found, value) = match &response.result {
             super::LocalKCutResultSummary::Found { cut_value, .. } => (true, Some(*cut_value)),
@@ -233,6 +235,7 @@ impl AuditLogger {
     }
 
     /// Get recent entries (up to count)
+    #[must_use]
     pub fn recent(&self, count: usize) -> Vec<AuditEntry> {
         let entries = self.entries.read().unwrap();
         let start = entries.len().saturating_sub(count);
@@ -240,6 +243,7 @@ impl AuditLogger {
     }
 
     /// Get entries by type
+    #[must_use]
     pub fn by_type(&self, entry_type: AuditEntryType) -> Vec<AuditEntry> {
         let entries = self.entries.read().unwrap();
         entries
@@ -250,6 +254,7 @@ impl AuditLogger {
     }
 
     /// Export full log
+    #[must_use]
     pub fn export(&self) -> Vec<AuditEntry> {
         let entries = self.entries.read().unwrap();
         entries.iter().cloned().collect()
@@ -270,17 +275,20 @@ impl AuditLogger {
     }
 
     /// Get number of entries
+    #[must_use]
     pub fn len(&self) -> usize {
         let entries = self.entries.read().unwrap();
         entries.len()
     }
 
     /// Check if log is empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     /// Get maximum capacity
+    #[must_use]
     pub fn capacity(&self) -> usize {
         self.max_entries
     }

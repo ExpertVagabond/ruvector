@@ -1,6 +1,6 @@
-//! Bounded-range instance using DeterministicLocalKCut
+//! Bounded-range instance using `DeterministicLocalKCut`
 //!
-//! Production implementation of ProperCutInstance that uses the
+//! Production implementation of `ProperCutInstance` that uses the
 //! deterministic local k-cut oracle from the paper.
 
 use super::witness::WitnessHandle;
@@ -27,9 +27,9 @@ struct BoundaryCache {
     valid: bool,
 }
 
-/// Bounded-range instance using LocalKCut oracle
+/// Bounded-range instance using `LocalKCut` oracle
 ///
-/// Maintains a family of candidate cuts and uses LocalKCut
+/// Maintains a family of candidate cuts and uses `LocalKCut`
 /// to find new cuts or certify none exist in the range.
 pub struct BoundedInstance {
     /// Lambda bounds
@@ -42,9 +42,9 @@ pub struct BoundedInstance {
     adjacency: HashMap<VertexId, Vec<(VertexId, EdgeId)>>,
     /// Current best witness (cached with interior mutability)
     best_witness: Mutex<Option<(u64, WitnessHandle)>>,
-    /// LocalKCut oracle
+    /// `LocalKCut` oracle
     oracle: DeterministicLocalKCut,
-    /// Certificate for verification (interior mutability for query())
+    /// Certificate for verification (interior mutability for `query()`)
     certificate: Mutex<CutCertificate>,
     /// Maximum radius for local search
     max_radius: usize,
@@ -58,6 +58,7 @@ pub struct BoundedInstance {
 
 impl BoundedInstance {
     /// Create a new bounded instance
+    #[must_use]
     pub fn new(lambda_min: u64, lambda_max: u64) -> Self {
         Self {
             lambda_min,
@@ -198,7 +199,7 @@ impl BoundedInstance {
         visited.len() == self.vertices.len()
     }
 
-    /// Search for cuts using LocalKCut oracle
+    /// Search for cuts using `LocalKCut` oracle
     fn search_for_cuts(&mut self) -> Option<(u64, WitnessHandle)> {
         // Build a temporary graph for the oracle
         let graph = Arc::new(DynamicGraph::new());
@@ -475,9 +476,8 @@ impl ProperCutInstance for BoundedInstance {
 
                 if value <= self.lambda_max {
                     return InstanceResult::ValueInRange { value, witness };
-                } else {
-                    return InstanceResult::AboveRange;
                 }
+                return InstanceResult::AboveRange;
             }
         }
 

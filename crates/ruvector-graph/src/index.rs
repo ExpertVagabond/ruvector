@@ -30,7 +30,7 @@ impl LabelIndex {
         for label in &node.labels {
             self.index
                 .entry(label.name.clone())
-                .or_insert_with(HashSet::new)
+                .or_default()
                 .insert(node.id.clone());
         }
     }
@@ -95,9 +95,9 @@ impl PropertyIndex {
             let value_str = self.property_value_to_string(value);
             self.index
                 .entry(key.clone())
-                .or_insert_with(DashMap::new)
+                .or_default()
                 .entry(value_str)
-                .or_insert_with(HashSet::new)
+                .or_default()
                 .insert(node.id.clone());
         }
     }
@@ -192,7 +192,7 @@ impl EdgeTypeIndex {
     pub fn add_edge(&self, edge: &Edge) {
         self.index
             .entry(edge.edge_type.clone())
-            .or_insert_with(HashSet::new)
+            .or_default()
             .insert(edge.id.clone());
     }
 
@@ -255,12 +255,12 @@ impl AdjacencyIndex {
     pub fn add_edge(&self, edge: &Edge) {
         self.outgoing
             .entry(edge.from.clone())
-            .or_insert_with(HashSet::new)
+            .or_default()
             .insert(edge.id.clone());
 
         self.incoming
             .entry(edge.to.clone())
-            .or_insert_with(HashSet::new)
+            .or_default()
             .insert(edge.id.clone());
     }
 
@@ -340,7 +340,7 @@ impl HyperedgeNodeIndex {
         for node_id in &hyperedge.nodes {
             self.index
                 .entry(node_id.clone())
-                .or_insert_with(HashSet::new)
+                .or_default()
                 .insert(hyperedge.id.clone());
         }
     }

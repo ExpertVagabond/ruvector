@@ -42,15 +42,9 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Instant;
 
-use crate::cluster::hierarchy::{
-    Expander, HierarchyCluster, HierarchyConfig, Precluster, ThreeLevelHierarchy,
-};
 use crate::error::{MinCutError, Result};
-use crate::expander::{ExpanderComponent, ExpanderDecomposition};
-use crate::fragmentation::{Fragmentation, FragmentationConfig, TrimResult};
-use crate::graph::{DynamicGraph, EdgeId, VertexId, Weight};
-use crate::localkcut::deterministic::{DeterministicLocalKCut, LocalCut as DetLocalCut};
-use crate::witness::{LazyWitnessTree, WitnessTree};
+use crate::graph::{VertexId, Weight};
+use crate::localkcut::deterministic::DeterministicLocalKCut;
 
 /// Configuration for the subpolynomial algorithm
 #[derive(Debug, Clone)]
@@ -59,7 +53,7 @@ pub struct SubpolyConfig {
     /// For n < 10^6, we use a practical approximation
     pub phi: f64,
     /// Maximum cut size to support exactly
-    /// λ_max = 2^{Θ(log^{3/4-c} n)}
+    /// `λ_max` = 2^{Θ(log^{3/4-c} n)}
     pub lambda_max: u64,
     /// Approximation parameter ε for (1+ε)-approximate internal operations
     pub epsilon: f64,
@@ -89,6 +83,7 @@ impl Default for SubpolyConfig {
 
 impl SubpolyConfig {
     /// Create config optimized for graph of size n
+    #[must_use]
     pub fn for_size(n: usize) -> Self {
         let log_n = (n.max(2) as f64).ln();
 
@@ -132,6 +127,7 @@ pub struct RecourseStats {
 
 impl RecourseStats {
     /// Check if recourse is within subpolynomial bounds
+    #[must_use]
     pub fn is_subpolynomial(&self, n: usize) -> bool {
         if n < 2 || self.num_updates == 0 {
             return true;
@@ -145,6 +141,7 @@ impl RecourseStats {
     }
 
     /// Get amortized recourse per update
+    #[must_use]
     pub fn amortized_recourse(&self) -> f64 {
         if self.num_updates == 0 {
             return 0.0;
@@ -202,7 +199,7 @@ pub struct SubpolynomialMinCut {
     edges: HashSet<(VertexId, VertexId)>,
     /// Multi-level hierarchy
     levels: Vec<HierarchyLevel>,
-    /// Deterministic LocalKCut for cut discovery
+    /// Deterministic `LocalKCut` for cut discovery
     local_kcut: Option<DeterministicLocalKCut>,
     /// Current minimum cut value
     current_min_cut: f64,
@@ -220,6 +217,7 @@ pub struct SubpolynomialMinCut {
 
 impl SubpolynomialMinCut {
     /// Create new subpolynomial min-cut structure
+    #[must_use]
     pub fn new(config: SubpolyConfig) -> Self {
         let num_levels = config.target_levels;
         let levels = (0..num_levels)
@@ -249,6 +247,7 @@ impl SubpolynomialMinCut {
     }
 
     /// Create with config optimized for expected graph size
+    #[must_use]
     pub fn for_size(expected_n: usize) -> Self {
         Self::new(SubpolyConfig::for_size(expected_n))
     }
@@ -981,7 +980,9 @@ impl SubpolynomialMinCut {
     }
 
     fn degree(&self, v: VertexId) -> usize {
-        self.adjacency.get(&v).map_or(0, |n| n.len())
+        self.adjacency
+            .get(&v)
+            .map_or(0, std::collections::HashMap::len)
     }
 
     fn neighbors(&self, v: VertexId) -> Vec<(VertexId, Weight)> {
@@ -1033,11 +1034,13 @@ impl SubpolynomialMinCut {
     // === Public API ===
 
     /// Get the current minimum cut value
+    #[must_use]
     pub fn min_cut_value(&self) -> f64 {
         self.current_min_cut
     }
 
     /// Get detailed minimum cut result
+    #[must_use]
     pub fn min_cut(&self) -> MinCutQueryResult {
         MinCutQueryResult {
             value: self.current_min_cut,
@@ -1049,31 +1052,37 @@ impl SubpolynomialMinCut {
     }
 
     /// Get configuration
+    #[must_use]
     pub fn config(&self) -> &SubpolyConfig {
         &self.config
     }
 
     /// Get number of vertices
+    #[must_use]
     pub fn num_vertices(&self) -> usize {
         self.num_vertices
     }
 
     /// Get number of edges
+    #[must_use]
     pub fn num_edges(&self) -> usize {
         self.num_edges
     }
 
     /// Get number of hierarchy levels
+    #[must_use]
     pub fn num_levels(&self) -> usize {
         self.levels.len()
     }
 
     /// Get recourse statistics
+    #[must_use]
     pub fn recourse_stats(&self) -> &RecourseStats {
         &self.recourse_stats
     }
 
     /// Get hierarchy statistics
+    #[must_use]
     pub fn hierarchy_stats(&self) -> HierarchyStatistics {
         HierarchyStatistics {
             num_levels: self.levels.len(),
@@ -1093,11 +1102,12 @@ impl SubpolynomialMinCut {
     }
 
     /// Check if updates are subpolynomial
+    #[must_use]
     pub fn is_subpolynomial(&self) -> bool {
         self.recourse_stats.is_subpolynomial(self.num_vertices)
     }
 
-    /// Certify cuts using LocalKCut verification
+    /// Certify cuts using `LocalKCut` verification
     pub fn certify_cuts(&mut self) {
         // First collect all expander info (exp_id, vertices)
         let mut expander_data: Vec<(usize, u64, HashSet<VertexId>)> = Vec::new();

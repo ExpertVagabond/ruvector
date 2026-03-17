@@ -9,16 +9,16 @@
 //! ΔW = A- * exp(Δt/τ-)   if Δt < 0 (post before pre → LTD)
 //! ```
 //!
-//! Where Δt = t_post - t_pre
+//! Where Δt = `t_post` - `t_pre`
 //!
-//! ## Integration with MinCut
+//! ## Integration with `MinCut`
 //!
 //! Synaptic weights directly map to graph edge weights:
 //! - Strong synapse → strong edge → less likely in mincut
 //! - STDP learning → edge weight evolution → dynamic mincut
 
 use super::{SimTime, Spike};
-use crate::graph::{DynamicGraph, VertexId, Weight};
+use crate::graph::{DynamicGraph, VertexId};
 use std::collections::HashMap;
 
 /// Configuration for STDP learning
@@ -76,6 +76,7 @@ pub struct Synapse {
 
 impl Synapse {
     /// Create a new synapse
+    #[must_use]
     pub fn new(pre: usize, post: usize, weight: f64) -> Self {
         Self {
             pre,
@@ -88,6 +89,7 @@ impl Synapse {
     }
 
     /// Create synapse with delay
+    #[must_use]
     pub fn with_delay(pre: usize, post: usize, weight: f64, delay: f64) -> Self {
         Self {
             pre,
@@ -154,6 +156,7 @@ pub struct SynapseMatrix {
 
 impl SynapseMatrix {
     /// Create a new synapse matrix
+    #[must_use]
     pub fn new(n_pre: usize, n_post: usize) -> Self {
         Self {
             n_pre,
@@ -166,6 +169,7 @@ impl SynapseMatrix {
     }
 
     /// Create with custom STDP config
+    #[must_use]
     pub fn with_config(n_pre: usize, n_post: usize, config: STDPConfig) -> Self {
         Self {
             n_pre,
@@ -186,6 +190,7 @@ impl SynapseMatrix {
     }
 
     /// Get synapse if it exists
+    #[must_use]
     pub fn get_synapse(&self, pre: usize, post: usize) -> Option<&Synapse> {
         self.synapses.get(&(pre, post))
     }
@@ -196,16 +201,18 @@ impl SynapseMatrix {
     }
 
     /// Get weight of a synapse (0 if doesn't exist)
+    #[must_use]
     pub fn weight(&self, pre: usize, post: usize) -> f64 {
-        self.get_synapse(pre, post).map(|s| s.weight).unwrap_or(0.0)
+        self.get_synapse(pre, post).map_or(0.0, |s| s.weight)
     }
 
     /// Compute weighted sum for all post-synaptic neurons given pre-synaptic activations
     ///
     /// This is optimized to iterate only over existing synapses, avoiding O(n²) lookups.
-    /// pre_activations[i] is the activation of pre-synaptic neuron i.
+    /// `pre_activations`[i] is the activation of pre-synaptic neuron i.
     /// Returns vector of weighted sums for each post-synaptic neuron.
     #[inline]
+    #[must_use]
     pub fn compute_weighted_sums(&self, pre_activations: &[f64]) -> Vec<f64> {
         let mut sums = vec![0.0; self.n_post];
 
@@ -221,6 +228,7 @@ impl SynapseMatrix {
 
     /// Compute weighted sum for a single post-synaptic neuron
     #[inline]
+    #[must_use]
     pub fn weighted_sum_for_post(&self, post: usize, pre_activations: &[f64]) -> f64 {
         let mut sum = 0.0;
         for pre in 0..self.n_pre.min(pre_activations.len()) {
@@ -312,11 +320,13 @@ impl SynapseMatrix {
     }
 
     /// Get number of synapses
+    #[must_use]
     pub fn num_synapses(&self) -> usize {
         self.synapses.len()
     }
 
     /// Compute total synaptic input to a post-synaptic neuron
+    #[must_use]
     pub fn input_to(&self, post: usize, pre_activities: &[f64]) -> f64 {
         let mut total = 0.0;
         for pre in 0..self.n_pre.min(pre_activities.len()) {
@@ -326,6 +336,7 @@ impl SynapseMatrix {
     }
 
     /// Create dense weight matrix
+    #[must_use]
     pub fn to_dense(&self) -> Vec<Vec<f64>> {
         let mut matrix = vec![vec![0.0; self.n_post]; self.n_pre];
         for ((pre, post), synapse) in &self.synapses {
@@ -335,9 +346,10 @@ impl SynapseMatrix {
     }
 
     /// Initialize from dense matrix
+    #[must_use]
     pub fn from_dense(matrix: &[Vec<f64>]) -> Self {
         let n_pre = matrix.len();
-        let n_post = matrix.first().map(|r| r.len()).unwrap_or(0);
+        let n_post = matrix.first().map_or(0, std::vec::Vec::len);
 
         let mut sm = Self::new(n_pre, n_post);
 
@@ -352,7 +364,7 @@ impl SynapseMatrix {
         sm
     }
 
-    /// Synchronize weights with a DynamicGraph
+    /// Synchronize weights with a `DynamicGraph`
     /// Maps neurons to vertices via a mapping function
     pub fn sync_to_graph<F>(&self, graph: &mut DynamicGraph, neuron_to_vertex: F)
     where
@@ -368,7 +380,7 @@ impl SynapseMatrix {
         }
     }
 
-    /// Load weights from a DynamicGraph
+    /// Load weights from a `DynamicGraph`
     pub fn sync_from_graph<F>(&mut self, graph: &DynamicGraph, vertex_to_neuron: F)
     where
         F: Fn(VertexId) -> usize,
@@ -384,6 +396,7 @@ impl SynapseMatrix {
     }
 
     /// Get high-correlation pairs (synapses with weight above threshold)
+    #[must_use]
     pub fn high_correlation_pairs(&self, threshold: f64) -> Vec<(usize, usize)> {
         self.synapses
             .iter()
@@ -420,6 +433,7 @@ impl Default for AsymmetricSTDP {
 impl AsymmetricSTDP {
     /// Compute weight change for causal relationship encoding
     /// Positive Δt (pre→post) is weighted more heavily
+    #[must_use]
     pub fn compute_dw(&self, dt: f64) -> f64 {
         if dt > 0.0 {
             // Pre before post → causal relationship

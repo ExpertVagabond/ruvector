@@ -5,10 +5,8 @@
 
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
-use core::marker::PhantomData;
 
 use crate::delta::{Delta, VectorDelta};
-use crate::error::{DeltaError, Result};
 
 /// Configuration for delta windows
 #[derive(Debug, Clone)]

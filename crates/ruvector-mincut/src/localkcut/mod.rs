@@ -1,6 +1,6 @@
 //! Deterministic Local K-Cut Algorithm
 //!
-//! Implements the derandomized LocalKCut procedure from the December 2024 paper
+//! Implements the derandomized `LocalKCut` procedure from the December 2024 paper
 //! "Deterministic and Exact Fully-dynamic Minimum Cut of Superpolylogarithmic Size"
 //!
 //! # Key Innovation
@@ -37,7 +37,6 @@ pub use paper_impl::{
 };
 
 use crate::graph::{DynamicGraph, EdgeId, VertexId, Weight};
-use crate::{MinCutError, Result};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
@@ -58,6 +57,7 @@ pub struct LocalCutResult {
 
 impl LocalCutResult {
     /// Create a new local cut result
+    #[must_use]
     pub fn new(
         cut_value: Weight,
         cut_set: HashSet<VertexId>,
@@ -90,6 +90,7 @@ pub enum EdgeColor {
 
 impl EdgeColor {
     /// Convert integer to color (mod 4)
+    #[must_use]
     pub fn from_index(index: usize) -> Self {
         match index % 4 {
             0 => EdgeColor::Red,
@@ -100,6 +101,7 @@ impl EdgeColor {
     }
 
     /// Convert color to integer
+    #[must_use]
     pub fn to_index(self) -> usize {
         match self {
             EdgeColor::Red => 0,
@@ -110,6 +112,7 @@ impl EdgeColor {
     }
 
     /// All possible colors
+    #[must_use]
     pub fn all() -> [EdgeColor; 4] {
         [
             EdgeColor::Red,
@@ -126,16 +129,19 @@ pub struct ColorMask(u8);
 
 impl ColorMask {
     /// Create empty color mask
+    #[must_use]
     pub fn empty() -> Self {
         Self(0)
     }
 
     /// Create mask with all colors
+    #[must_use]
     pub fn all() -> Self {
         Self(0b1111)
     }
 
     /// Create mask from color set
+    #[must_use]
     pub fn from_colors(colors: &[EdgeColor]) -> Self {
         let mut mask = 0u8;
         for color in colors {
@@ -145,6 +151,7 @@ impl ColorMask {
     }
 
     /// Check if mask contains color
+    #[must_use]
     pub fn contains(self, color: EdgeColor) -> bool {
         (self.0 & (1 << color.to_index())) != 0
     }
@@ -155,6 +162,7 @@ impl ColorMask {
     }
 
     /// Get colors in mask
+    #[must_use]
     pub fn colors(self) -> Vec<EdgeColor> {
         let mut result = Vec::new();
         for color in EdgeColor::all() {
@@ -166,6 +174,7 @@ impl ColorMask {
     }
 
     /// Number of colors in mask
+    #[must_use]
     pub fn count(self) -> usize {
         self.0.count_ones() as usize
     }
@@ -177,21 +186,21 @@ pub struct LocalKCut {
     k: usize,
     /// Graph reference
     graph: Arc<DynamicGraph>,
-    /// Edge colorings (edge_id -> color)
+    /// Edge colorings (`edge_id` -> color)
     edge_colors: HashMap<EdgeId, EdgeColor>,
     /// Search radius (depth of BFS)
     radius: usize,
 }
 
 impl LocalKCut {
-    /// Create new LocalKCut finder for cuts up to size k
+    /// Create new `LocalKCut` finder for cuts up to size k
     ///
     /// # Arguments
     /// * `graph` - The graph to search in
     /// * `k` - Maximum cut size to find
     ///
     /// # Returns
-    /// A new LocalKCut instance with deterministic edge colorings
+    /// A new `LocalKCut` instance with deterministic edge colorings
     pub fn new(graph: Arc<DynamicGraph>, k: usize) -> Self {
         let radius = Self::compute_radius(k);
         let mut finder = Self {
@@ -229,6 +238,7 @@ impl LocalKCut {
     ///
     /// # Returns
     /// Some(LocalCutResult) if a cut ≤ k is found, None otherwise
+    #[must_use]
     pub fn find_cut(&self, v: VertexId) -> Option<LocalCutResult> {
         if !self.graph.has_vertex(v) {
             return None;
@@ -334,7 +344,7 @@ impl LocalKCut {
     /// Uses a deterministic coloring scheme based on edge IDs.
     /// This ensures reproducibility and correctness guarantees.
     ///
-    /// Coloring scheme: color(e) = edge_id mod 4
+    /// Coloring scheme: color(e) = `edge_id` mod 4
     fn assign_colors(&mut self) {
         self.edge_colors.clear();
 
@@ -398,6 +408,7 @@ impl LocalKCut {
     ///
     /// # Returns
     /// Vector of reachable vertex sets, one per color combination
+    #[must_use]
     pub fn enumerate_paths(&self, v: VertexId, depth: usize) -> Vec<HashSet<VertexId>> {
         let mut results = Vec::new();
 
@@ -415,16 +426,19 @@ impl LocalKCut {
     }
 
     /// Get the color of an edge
+    #[must_use]
     pub fn edge_color(&self, edge_id: EdgeId) -> Option<EdgeColor> {
         self.edge_colors.get(&edge_id).copied()
     }
 
     /// Get current search radius
+    #[must_use]
     pub fn radius(&self) -> usize {
         self.radius
     }
 
     /// Get maximum cut size
+    #[must_use]
     pub fn max_cut_size(&self) -> usize {
         self.k
     }
@@ -448,7 +462,7 @@ pub struct ForestPacking {
 }
 
 impl ForestPacking {
-    /// Create greedy forest packing with ⌈λ_max · log(m) / ε²⌉ forests
+    /// Create greedy forest packing with ⌈`λ_max` · log(m) / ε²⌉ forests
     ///
     /// # Algorithm
     ///
@@ -521,6 +535,7 @@ impl ForestPacking {
     /// # Returns
     ///
     /// true if the cut is witnessed by all forests
+    #[must_use]
     pub fn witnesses_cut(&self, cut_edges: &[(VertexId, VertexId)]) -> bool {
         if self.forests.is_empty() {
             return true;
@@ -546,11 +561,13 @@ impl ForestPacking {
     }
 
     /// Get number of forests
+    #[must_use]
     pub fn num_forests(&self) -> usize {
         self.num_forests
     }
 
     /// Get a specific forest
+    #[must_use]
     pub fn forest(&self, index: usize) -> Option<&HashSet<(VertexId, VertexId)>> {
         self.forests.get(index)
     }

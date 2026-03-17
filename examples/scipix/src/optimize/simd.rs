@@ -116,8 +116,6 @@ unsafe fn sse_grayscale(rgba: &[u8], gray: &mut [u8]) {
 
 #[cfg(target_arch = "aarch64")]
 unsafe fn neon_grayscale(rgba: &[u8], gray: &mut [u8]) {
-    use std::arch::aarch64::*;
-
     let len = gray.len();
     let mut i = 0;
 
@@ -142,7 +140,7 @@ pub fn simd_threshold(gray: &[u8], thresh: u8, out: &mut [u8]) {
         return scalar_threshold(gray, thresh, out);
     }
 
-    let features = get_features();
+    let _features = get_features();
 
     #[cfg(target_arch = "x86_64")]
     {
@@ -195,7 +193,7 @@ pub fn simd_normalize(data: &mut [f32]) {
         return scalar_normalize(data);
     }
 
-    let features = get_features();
+    let _features = get_features();
 
     #[cfg(target_arch = "x86_64")]
     {
@@ -298,7 +296,7 @@ pub fn simd_resize_bilinear(
         return scalar_resize_bilinear(src, src_width, src_height, dst_width, dst_height);
     }
 
-    let features = get_features();
+    let _features = get_features();
 
     #[cfg(target_arch = "x86_64")]
     {

@@ -2,8 +2,10 @@
 //!
 //! Provides the external API for the 256-core WASM chip.
 
-use crate::compact::*;
-use crate::parallel::*;
+use crate::compact::{
+    BitSet256, CompactVertexId, CompactWitness, CoreResult, MAX_VERTICES_PER_CORE,
+};
+use crate::parallel::{CoreExecutor, CoreStrategy, ResultAggregator, SharedCoordinator};
 
 /// External interface for agentic chip
 /// This is the main entry point called from the chip's control plane
@@ -23,6 +25,7 @@ pub struct AgenticMinCut {
 
 impl AgenticMinCut {
     /// Create new instance
+    #[must_use]
     pub fn new() -> Self {
         Self {
             coordinator: SharedCoordinator::new(),
@@ -161,12 +164,13 @@ pub mod ffi {
     }
 }
 
-/// RuVector integration
+/// `RuVector` integration
 pub mod ruvector {
-    use super::*;
+    use super::{CompactVertexId, CoreExecutor, SharedCoordinator, MAX_VERTICES_PER_CORE};
     use std::collections::BTreeMap;
 
-    /// Convert RuVector graph to compact representation
+    /// Convert `RuVector` graph to compact representation
+    #[must_use]
     pub fn from_ruvector_graph(
         vertices: &[u64],
         edges: &[(u64, u64, f32)],
@@ -196,7 +200,8 @@ pub mod ruvector {
         (compact_vertices, compact_edges)
     }
 
-    /// Compute minimum cut for RuVector graph
+    /// Compute minimum cut for `RuVector` graph
+    #[must_use]
     pub fn compute_mincut(vertices: &[u64], edges: &[(u64, u64, f32)]) -> Option<(u16, Vec<u64>)> {
         let (compact_v, compact_e) = from_ruvector_graph(vertices, edges);
 

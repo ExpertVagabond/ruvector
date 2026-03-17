@@ -53,15 +53,15 @@ impl MmdFormatter {
             match line.line_type.as_str() {
                 "text" => {
                     if in_table {
-                        output.push_str("\n");
+                        output.push('\n');
                         in_table = false;
                     }
-                    if in_list && !line.text.trim_start().starts_with(&['-', '*', '1']) {
-                        output.push_str("\n");
+                    if in_list && !line.text.trim_start().starts_with(['-', '*', '1']) {
+                        output.push('\n');
                         in_list = false;
                     }
                     output.push_str(&line.text);
-                    output.push_str("\n");
+                    output.push('\n');
                 }
                 "math" | "equation" => {
                     let latex = line.latex.as_ref().unwrap_or(&line.text);
@@ -79,14 +79,14 @@ impl MmdFormatter {
                         in_table = true;
                     }
                     output.push_str(&self.format_table_row(&line.text));
-                    output.push_str("\n");
+                    output.push('\n');
                 }
                 "list_item" => {
                     if !in_list {
                         in_list = true;
                     }
                     output.push_str(&line.text);
-                    output.push_str("\n");
+                    output.push('\n');
                 }
                 "heading" => {
                     output.push_str(&format!("# {}\n\n", line.text));
@@ -102,7 +102,7 @@ impl MmdFormatter {
                 _ => {
                     // Unknown type, output as text
                     output.push_str(&line.text);
-                    output.push_str("\n");
+                    output.push('\n');
                 }
             }
         }

@@ -29,7 +29,7 @@ pub type CompactVertexId = u16;
 pub type CompactEdgeId = u16;
 
 /// Bit-packed membership set (256 vertices = 32 bytes)
-/// Much smaller than RoaringBitmap for small vertex counts
+/// Much smaller than `RoaringBitmap` for small vertex counts
 #[derive(Clone, Copy, Default)]
 #[repr(C, align(32))]
 pub struct BitSet256 {
@@ -38,6 +38,7 @@ pub struct BitSet256 {
 }
 
 impl BitSet256 {
+    #[must_use]
     pub const fn new() -> Self {
         Self { bits: [0; 4] }
     }
@@ -52,6 +53,7 @@ impl BitSet256 {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn contains(&self, v: CompactVertexId) -> bool {
         let idx = (v / 64) as usize;
         let bit = v % 64;
@@ -68,11 +70,13 @@ impl BitSet256 {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn count(&self) -> u32 {
         self.bits.iter().map(|b| b.count_ones()).sum()
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn union(&self, other: &Self) -> Self {
         Self {
             bits: [
@@ -85,6 +89,7 @@ impl BitSet256 {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn intersection(&self, other: &Self) -> Self {
         Self {
             bits: [
@@ -97,6 +102,7 @@ impl BitSet256 {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn xor(&self, other: &Self) -> Self {
         Self {
             bits: [
@@ -108,7 +114,8 @@ impl BitSet256 {
         }
     }
 
-    pub fn iter(&self) -> BitSet256Iter {
+    #[must_use]
+    pub fn iter(&self) -> BitSet256Iter<'_> {
         // Initialize with the first word's value
         BitSet256Iter {
             set: self,
@@ -124,7 +131,7 @@ pub struct BitSet256Iter<'a> {
     word_idx: usize,
 }
 
-impl<'a> Iterator for BitSet256Iter<'a> {
+impl Iterator for BitSet256Iter<'_> {
     type Item = CompactVertexId;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -159,11 +166,13 @@ impl CompactEdge {
     pub const FLAG_TREE_EDGE: u16 = 0x0004;
 
     #[inline(always)]
+    #[must_use]
     pub fn is_active(&self) -> bool {
         self.flags & Self::FLAG_ACTIVE != 0
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn is_in_cut(&self) -> bool {
         self.flags & Self::FLAG_IN_CUT != 0
     }
@@ -181,6 +190,7 @@ pub struct CompactWitness {
 }
 
 impl CompactWitness {
+    #[must_use]
     pub fn new(seed: CompactVertexId, membership: BitSet256, boundary: u16) -> Self {
         let cardinality = membership.count() as u16;
         let hash = Self::compute_hash(seed, &membership);
@@ -194,7 +204,7 @@ impl CompactWitness {
     }
 
     fn compute_hash(seed: CompactVertexId, membership: &BitSet256) -> u16 {
-        let mut h = seed as u32;
+        let mut h = u32::from(seed);
         for &word in &membership.bits {
             h = h.wrapping_mul(31).wrapping_add(word as u32);
         }
@@ -202,6 +212,7 @@ impl CompactWitness {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn contains(&self, v: CompactVertexId) -> bool {
         self.membership.contains(v)
     }
@@ -213,7 +224,7 @@ impl CompactWitness {
 pub struct CompactAdjacency {
     /// Offset into neighbors array for each vertex
     pub offsets: [u16; MAX_VERTICES_PER_CORE + 1], // 514 bytes
-    /// Packed neighbor list (vertex, edge_id)
+    /// Packed neighbor list (vertex, `edge_id`)
     pub neighbors: [(CompactVertexId, CompactEdgeId); MAX_EDGES_PER_CORE * 2], // 2048 bytes
 }
 
@@ -227,21 +238,23 @@ impl Default for CompactAdjacency {
 }
 
 impl CompactAdjacency {
+    #[must_use]
     pub fn neighbors(&self, v: CompactVertexId) -> &[(CompactVertexId, CompactEdgeId)] {
         let start = self.offsets[v as usize] as usize;
         let end = self.offsets[v as usize + 1] as usize;
         &self.neighbors[start..end]
     }
 
+    #[must_use]
     pub fn degree(&self, v: CompactVertexId) -> u16 {
         self.offsets[v as usize + 1] - self.offsets[v as usize]
     }
 }
 
 /// Memory budget breakdown for 8KB core:
-/// - CompactAdjacency: ~3.5KB (514 + 3072 bytes)
+/// - `CompactAdjacency`: ~3.5KB (514 + 3072 bytes)
 /// - Edge array: 384 × 8 = 3KB
-/// - CompactWitness: 40 bytes
+/// - `CompactWitness`: 40 bytes
 /// - Other fields: ~12 bytes
 /// - Stack/control: ~1.4KB
 /// Total: ~6.7KB (fits comfortably in 8KB)
@@ -261,7 +274,7 @@ pub struct CompactCoreState {
     pub min_cut: u16,
     /// Best witness found
     pub best_witness: CompactWitness,
-    /// Instance range [lambda_min, lambda_max]
+    /// Instance range [`lambda_min`, `lambda_max`]
     pub lambda_min: u16,
     pub lambda_max: u16,
     /// Core ID (0-255)
@@ -276,6 +289,7 @@ impl CompactCoreState {
     pub const STATUS_DONE: u8 = 2;
     pub const STATUS_ERROR: u8 = 3;
 
+    #[must_use]
     pub const fn size() -> usize {
         size_of::<Self>()
     }

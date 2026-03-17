@@ -265,6 +265,7 @@ impl CactusGraph {
     ///
     /// The canonical cut is obtained by choosing the lexicographically
     /// smallest partition among all minimum cuts.
+    #[must_use]
     pub fn canonical_cut(&self) -> CanonicalCutResult {
         let all_cuts = self.enumerate_min_cuts();
 
@@ -322,6 +323,7 @@ impl CactusGraph {
     /// Enumerate all minimum cut partitions from the cactus structure.
     ///
     /// Each tree edge and each cycle split yields a distinct minimum cut.
+    #[must_use]
     pub fn enumerate_min_cuts(&self) -> Vec<(Vec<usize>, Vec<usize>)> {
         let mut result = Vec::new();
 
@@ -333,7 +335,7 @@ impl CactusGraph {
 
         // For each non-cycle edge: removing it splits the cactus into
         // two connected subtrees.
-        for (idx, edge) in self.edges.iter().enumerate() {
+        for edge in self.edges.iter() {
             if edge.is_cycle_edge {
                 continue;
             }
@@ -415,7 +417,7 @@ impl CactusGraph {
     /// Stoer-Wagner algorithm that returns global min-cut value and all
     /// minimum-phase cuts whose value equals the global minimum.
     ///
-    /// Tight dense implementation using flat arrays with no HashMap overhead.
+    /// Tight dense implementation using flat arrays with no `HashMap` overhead.
     /// For n <= 256 vertices the dense approach is fastest due to cache locality.
     fn stoer_wagner_all_cuts(
         adj: &HashMap<usize, HashMap<usize, f64>>,
@@ -574,7 +576,7 @@ impl CactusGraph {
     fn build_cactus_from_cuts(
         vertices_ids: &[VertexId],
         adj: &HashMap<usize, HashMap<usize, f64>>,
-        min_cut_value: f64,
+        _min_cut_value: f64,
         partitions: &[(Vec<usize>, Vec<usize>)],
     ) -> Self {
         if partitions.is_empty() {
@@ -880,24 +882,18 @@ impl CactusGraph {
         let mut total = 0.0f64;
 
         for e in &self.edges {
-            let src_in_s = id_map
-                .get(&e.source)
-                .map(|&i| {
-                    self.vertices[i]
-                        .original_vertices
-                        .iter()
-                        .any(|v| s_set.contains(v))
-                })
-                .unwrap_or(false);
-            let tgt_in_s = id_map
-                .get(&e.target)
-                .map(|&i| {
-                    self.vertices[i]
-                        .original_vertices
-                        .iter()
-                        .any(|v| s_set.contains(v))
-                })
-                .unwrap_or(false);
+            let src_in_s = id_map.get(&e.source).is_some_and(|&i| {
+                self.vertices[i]
+                    .original_vertices
+                    .iter()
+                    .any(|v| s_set.contains(v))
+            });
+            let tgt_in_s = id_map.get(&e.target).is_some_and(|&i| {
+                self.vertices[i]
+                    .original_vertices
+                    .iter()
+                    .any(|v| s_set.contains(v))
+            });
 
             if src_in_s != tgt_in_s {
                 total += e.weight.to_f64();
@@ -923,22 +919,18 @@ impl CactusGraph {
             let src_idx = id_map.get(&e.source).copied();
             let tgt_idx = id_map.get(&e.target).copied();
 
-            let src_in_s = src_idx
-                .map(|i| {
-                    self.vertices[i]
-                        .original_vertices
-                        .iter()
-                        .any(|v| s_set.contains(v))
-                })
-                .unwrap_or(false);
-            let tgt_in_s = tgt_idx
-                .map(|i| {
-                    self.vertices[i]
-                        .original_vertices
-                        .iter()
-                        .any(|v| s_set.contains(v))
-                })
-                .unwrap_or(false);
+            let src_in_s = src_idx.is_some_and(|i| {
+                self.vertices[i]
+                    .original_vertices
+                    .iter()
+                    .any(|v| s_set.contains(v))
+            });
+            let tgt_in_s = tgt_idx.is_some_and(|i| {
+                self.vertices[i]
+                    .original_vertices
+                    .iter()
+                    .any(|v| s_set.contains(v))
+            });
 
             if src_in_s != tgt_in_s {
                 // Add representative edge
@@ -953,7 +945,7 @@ impl CactusGraph {
         cut_edges
     }
 
-    /// Compute a deterministic canonical key from a partition using SipHash.
+    /// Compute a deterministic canonical key from a partition using `SipHash`.
     fn compute_canonical_key(partition: &[usize]) -> [u8; 32] {
         let mut sorted = partition.to_vec();
         sorted.sort_unstable();
@@ -1084,6 +1076,7 @@ pub struct CanonicalMinCutImpl {
 
 impl CanonicalMinCutImpl {
     /// Create from an existing `DynamicMinCut`.
+    #[must_use]
     pub fn from_dynamic(inner: algorithm::DynamicMinCut) -> Self {
         Self {
             inner,
@@ -1094,6 +1087,7 @@ impl CanonicalMinCutImpl {
     }
 
     /// Create a new empty canonical min-cut structure.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             inner: algorithm::DynamicMinCut::new(MinCutConfig::default()),

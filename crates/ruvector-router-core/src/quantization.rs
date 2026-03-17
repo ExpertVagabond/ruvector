@@ -139,7 +139,7 @@ fn binary_quantize(vector: &[f32]) -> QuantizedVector {
 fn binary_dequantize(data: &[u8], threshold: f32, dimensions: usize) -> Vec<f32> {
     let mut result = Vec::with_capacity(dimensions);
 
-    for (i, &byte) in data.iter().enumerate() {
+    for (_i, &byte) in data.iter().enumerate() {
         for bit_idx in 0..8 {
             if result.len() >= dimensions {
                 break;

@@ -2,8 +2,8 @@
 //!
 //! Provides GNN-based predictions: node classification, link prediction, graph embeddings.
 
-use crate::error::{GraphError, Result};
-use crate::types::{EdgeId, NodeId};
+use crate::error::Result;
+use crate::types::NodeId;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -202,7 +202,7 @@ impl GraphNeuralEngine {
             ActivationType::Tanh => x.tanh(),
             ActivationType::GELU => {
                 // Approximate GELU
-                0.5 * x * (1.0 + (0.7978845608 * (x + 0.044715 * x.powi(3))).tanh())
+                0.5 * x * (1.0 + (0.797_884_6 * (x + 0.044715 * x.powi(3))).tanh())
             }
         }
     }

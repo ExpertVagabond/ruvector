@@ -137,7 +137,7 @@ pub fn verify_circuit(circuit: &QuantumCircuit, shots: u32, seed: u64) -> Verifi
         result.reference_backend = Some(BackendType::Stabilizer);
 
         // Upgrade to Exact level if the distributions match perfectly.
-        if result.passed && result.total_variation_distance.map_or(false, |d| d == 0.0) {
+        if result.passed && (result.total_variation_distance == Some(0.0)) {
             result.level = VerificationLevel::Exact;
             result.explanation = format!(
                 "Exact match: {}-qubit Clifford circuit verified across \
@@ -317,7 +317,7 @@ pub fn verify_against_reference(
 /// Measure, Reset, and Barrier. Any other gate (T, Tdg, rotations, custom
 /// unitaries) makes the circuit non-Clifford.
 pub fn is_clifford_circuit(circuit: &QuantumCircuit) -> bool {
-    circuit.gates().iter().all(|gate| is_clifford_gate(gate))
+    circuit.gates().iter().all(is_clifford_gate)
 }
 
 /// Check if a single gate is Clifford-compatible.
@@ -528,7 +528,7 @@ pub fn chi_squared_statistic(
     }
 
     // Degrees of freedom = number of bins - 1 (constraint: totals match).
-    let dof = if bins_used > 1 { bins_used - 1 } else { 0 };
+    let dof = bins_used.saturating_sub(1);
 
     (chi2, dof)
 }

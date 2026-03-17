@@ -29,6 +29,7 @@ pub struct DistanceArray {
 
 impl DistanceArray {
     /// Create new distance array initialized to infinity
+    #[must_use]
     pub fn new(size: usize) -> Self {
         Self {
             data: vec![f64::INFINITY; size],
@@ -37,6 +38,7 @@ impl DistanceArray {
     }
 
     /// Create from slice
+    #[must_use]
     pub fn from_slice(slice: &[f64]) -> Self {
         Self {
             data: slice.to_vec(),
@@ -46,6 +48,7 @@ impl DistanceArray {
 
     /// Get distance for vertex
     #[inline]
+    #[must_use]
     pub fn get(&self, v: VertexId) -> f64 {
         self.data.get(v as usize).copied().unwrap_or(f64::INFINITY)
     }
@@ -59,11 +62,13 @@ impl DistanceArray {
     }
 
     /// Get number of elements
+    #[must_use]
     pub fn len(&self) -> usize {
         self.len
     }
 
     /// Check if empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
@@ -76,6 +81,7 @@ impl DistanceArray {
     }
 
     /// Get raw slice
+    #[must_use]
     pub fn as_slice(&self) -> &[f64] {
         &self.data
     }
@@ -138,6 +144,7 @@ impl SimdDistanceOps {
 
     /// Find minimum distance and its index (scalar fallback)
     #[cfg(not(target_arch = "wasm32"))]
+    #[must_use]
     pub fn find_min(distances: &DistanceArray) -> (f64, usize) {
         let data = distances.as_slice();
         if data.is_empty() {
@@ -350,6 +357,7 @@ impl SimdDistanceOps {
 
     /// Count vertices with distance less than threshold (scalar fallback)
     #[cfg(not(target_arch = "wasm32"))]
+    #[must_use]
     pub fn count_below_threshold(distances: &DistanceArray, threshold: f64) -> usize {
         distances
             .as_slice()
@@ -359,6 +367,7 @@ impl SimdDistanceOps {
     }
 
     /// Compute sum of distances (for average)
+    #[must_use]
     pub fn sum_finite(distances: &DistanceArray) -> (f64, usize) {
         let mut sum = 0.0;
         let mut count = 0;
@@ -374,6 +383,7 @@ impl SimdDistanceOps {
     }
 
     /// Element-wise minimum of two distance arrays
+    #[must_use]
     pub fn elementwise_min(a: &DistanceArray, b: &DistanceArray) -> DistanceArray {
         let len = a.len().min(b.len());
         let mut result = DistanceArray::new(len);
@@ -421,6 +431,7 @@ pub struct PriorityEntry {
 
 impl PriorityEntry {
     /// Create a new priority entry with given distance and vertex.
+    #[must_use]
     pub fn new(distance: f64, vertex: VertexId) -> Self {
         Self { distance, vertex }
     }

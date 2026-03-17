@@ -83,8 +83,8 @@ impl LevelForest {
 
     #[inline]
     fn add_vertex(&mut self, v: VertexId) {
-        if !self.parent.contains_key(&v) {
-            self.parent.insert(v, v);
+        if let std::collections::hash_map::Entry::Vacant(e) = self.parent.entry(v) {
+            e.insert(v);
             self.rank.insert(v, 0);
             self.component_size.insert(v, 1);
             self.adjacency.insert(v, Vec::new());
@@ -256,6 +256,7 @@ pub struct PolylogStats {
 
 impl PolylogConnectivity {
     /// Create new empty connectivity structure
+    #[must_use]
     pub fn new() -> Self {
         Self {
             levels: (0..MAX_LEVELS).map(|_| LevelForest::new()).collect(),
@@ -372,26 +373,31 @@ impl PolylogConnectivity {
     }
 
     /// Check if the entire graph is connected
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         self.component_count <= 1
     }
 
     /// Get number of connected components
+    #[must_use]
     pub fn component_count(&self) -> usize {
         self.component_count
     }
 
     /// Get number of vertices
+    #[must_use]
     pub fn vertex_count(&self) -> usize {
         self.vertex_count
     }
 
     /// Get number of edges
+    #[must_use]
     pub fn edge_count(&self) -> usize {
         self.edges.len()
     }
 
     /// Get statistics
+    #[must_use]
     pub fn stats(&self) -> &PolylogStats {
         &self.stats
     }

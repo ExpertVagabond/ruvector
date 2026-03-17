@@ -129,7 +129,7 @@ where
                 queue.len() >= self.config.max_batch_size
                     || (queue.len() >= self.config.preferred_batch_size
                         && last_process.elapsed().as_millis() >= self.config.max_wait_ms as u128)
-                    || (queue.len() > 0
+                    || (!queue.is_empty()
                         && last_process.elapsed().as_millis() >= self.config.max_wait_ms as u128)
             };
 
@@ -172,7 +172,7 @@ where
 
         // Send responses
         for (response_tx, result) in responses.into_iter().zip(results.into_iter()) {
-            let batch_result = result.map_err(|e| BatchError::ProcessingFailed(e));
+            let batch_result = result.map_err(BatchError::ProcessingFailed);
             let _ = response_tx.send(batch_result);
         }
     }

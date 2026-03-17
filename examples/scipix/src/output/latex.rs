@@ -115,7 +115,7 @@ impl LaTeXFormatter {
                 }
                 _ => {
                     output.push_str(&line.text);
-                    output.push_str("\n");
+                    output.push('\n');
                 }
             }
         }
@@ -138,7 +138,7 @@ impl LaTeXFormatter {
         for package in &self.packages {
             doc.push_str(&format!("\\usepackage{{{}}}\n", package));
         }
-        doc.push_str("\n");
+        doc.push('\n');
 
         // Custom preamble
         if !self.preamble.is_empty() {

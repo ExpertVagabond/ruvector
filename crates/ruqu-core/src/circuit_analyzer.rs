@@ -165,11 +165,7 @@ pub fn is_nearest_neighbor(circuit: &QuantumCircuit) -> bool {
     circuit.gates().iter().all(|gate| {
         let qubits = gate.qubits();
         if qubits.len() == 2 {
-            let dist = if qubits[0] > qubits[1] {
-                qubits[0] - qubits[1]
-            } else {
-                qubits[1] - qubits[0]
-            };
+            let dist = qubits[0].abs_diff(qubits[1]);
             dist <= 1
         } else {
             true

@@ -6,16 +6,16 @@
 //! # Overview
 //!
 //! The wrapper maintains instances with ranges:
-//! - Instance i: \[λ_min\[i\], λ_max\[i\]\] where
-//! - λ_min\[i\] = floor(1.2^i)
-//! - λ_max\[i\] = floor(1.2^(i+1))
+//! - Instance i: \[`λ_min`\[i\], `λ_max`\[i\]\] where
+//! - `λ_min`\[i\] = floor(1.2^i)
+//! - `λ_max`\[i\] = floor(1.2^(i+1))
 //!
 //! # Algorithm
 //!
 //! 1. Buffer edge insertions and deletions
 //! 2. On query, process instances in increasing order
 //! 3. Apply inserts before deletes (order invariant)
-//! 4. Stop when instance returns AboveRange
+//! 4. Stop when instance returns `AboveRange`
 //!
 //! # Time Complexity
 //!
@@ -25,9 +25,7 @@
 
 use crate::connectivity::DynamicConnectivity;
 use crate::graph::{DynamicGraph, EdgeId, VertexId};
-use crate::instance::{
-    BoundedInstance, InstanceResult, ProperCutInstance, StubInstance, WitnessHandle,
-};
+use crate::instance::{BoundedInstance, InstanceResult, ProperCutInstance, WitnessHandle};
 use std::sync::Arc;
 
 #[cfg(feature = "agentic")]
@@ -59,6 +57,7 @@ pub enum MinCutResult {
 
 impl MinCutResult {
     /// Get the cut value (0 for disconnected)
+    #[must_use]
     pub fn value(&self) -> u64 {
         match self {
             Self::Disconnected => 0,
@@ -67,11 +66,13 @@ impl MinCutResult {
     }
 
     /// Check if the graph is connected
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         !matches!(self, Self::Disconnected)
     }
 
     /// Get the witness if available
+    #[must_use]
     pub fn witness(&self) -> Option<&WitnessHandle> {
         match self {
             Self::Disconnected => None,
@@ -369,7 +370,7 @@ impl MinCutWrapper {
     /// Process instances in order per paper algorithm
     ///
     /// Applies buffered updates to instances in increasing order and queries
-    /// each instance until one reports AboveRange.
+    /// each instance until one reports `AboveRange`.
     ///
     /// # Algorithm
     ///
@@ -378,8 +379,8 @@ impl MinCutWrapper {
     /// 2. Apply pending inserts (in time order)
     /// 3. Apply pending deletes (in time order)
     /// 4. Query the instance
-    /// 5. If ValueInRange, save result and continue
-    /// 6. If AboveRange, stop and return previous result
+    /// 5. If `ValueInRange`, save result and continue
+    /// 6. If `AboveRange`, stop and return previous result
     ///
     /// # Performance Optimization
     ///
@@ -471,24 +472,21 @@ impl MinCutWrapper {
         self.pending_deletes.clear();
 
         // Return result and cache for future binary search optimization
-        match last_in_range {
-            Some((cut_value, witness)) => {
-                // Cache the min-cut value for binary search optimization on next query
-                self.last_min_cut = Some(cut_value);
-                MinCutResult::Value { cut_value, witness }
-            }
-            None => {
-                // No instance reported ValueInRange - create dummy result
-                // Clear cache since we don't have a valid value
-                self.last_min_cut = None;
-                use roaring::RoaringBitmap;
-                let mut membership = RoaringBitmap::new();
-                membership.insert(0);
-                let witness = WitnessHandle::new(0, membership, u64::MAX);
-                MinCutResult::Value {
-                    cut_value: u64::MAX,
-                    witness,
-                }
+        if let Some((cut_value, witness)) = last_in_range {
+            // Cache the min-cut value for binary search optimization on next query
+            self.last_min_cut = Some(cut_value);
+            MinCutResult::Value { cut_value, witness }
+        } else {
+            // No instance reported ValueInRange - create dummy result
+            // Clear cache since we don't have a valid value
+            self.last_min_cut = None;
+            use roaring::RoaringBitmap;
+            let mut membership = RoaringBitmap::new();
+            membership.insert(0);
+            let witness = WitnessHandle::new(0, membership, u64::MAX);
+            MinCutResult::Value {
+                cut_value: u64::MAX,
+                witness,
             }
         }
     }
@@ -501,7 +499,7 @@ impl MinCutWrapper {
     ///
     /// # Returns
     ///
-    /// Tuple of (λ_min, λ_max) for this instance
+    /// Tuple of (`λ_min`, `λ_max`) for this instance
     ///
     /// # Examples
     ///
@@ -523,10 +521,10 @@ impl MinCutWrapper {
     /// Find the instance index containing a value using binary search
     ///
     /// # Performance
-    /// O(log(MAX_INSTANCES)) instead of O(MAX_INSTANCES) linear search
+    /// `O(log(MAX_INSTANCES))` instead of `O(MAX_INSTANCES)` linear search
     ///
     /// # Returns
-    /// Instance index where lambda_min <= value <= lambda_max
+    /// Instance index where `lambda_min` <= value <= `lambda_max`
     fn find_instance_for_value(&self, value: u64) -> usize {
         // Binary search for the instance containing this value
         let mut lo = 0usize;
@@ -562,16 +560,19 @@ impl MinCutWrapper {
     }
 
     /// Get the number of instantiated instances
+    #[must_use]
     pub fn num_instances(&self) -> usize {
         self.instances.iter().filter(|i| i.is_some()).count()
     }
 
     /// Get the current time counter
+    #[must_use]
     pub fn current_time(&self) -> u64 {
         self.current_time
     }
 
     /// Get the number of pending updates
+    #[must_use]
     pub fn pending_updates(&self) -> usize {
         self.pending_inserts.len() + self.pending_deletes.len()
     }
@@ -588,7 +589,7 @@ impl MinCutWrapper {
     ///
     /// # Arguments
     ///
-    /// * `edges` - Slice of (edge_id, u, v) tuples
+    /// * `edges` - Slice of (`edge_id`, u, v) tuples
     ///
     /// # Examples
     ///
@@ -626,7 +627,7 @@ impl MinCutWrapper {
     ///
     /// # Arguments
     ///
-    /// * `edges` - Slice of (edge_id, u, v) tuples
+    /// * `edges` - Slice of (`edge_id`, u, v) tuples
     ///
     /// # Examples
     ///
@@ -664,8 +665,8 @@ impl MinCutWrapper {
     ///
     /// # Arguments
     ///
-    /// * `inserts` - Edges to insert: (edge_id, u, v)
-    /// * `deletes` - Edges to delete: (edge_id, u, v)
+    /// * `inserts` - Edges to insert: (`edge_id`, u, v)
+    /// * `deletes` - Edges to delete: (`edge_id`, u, v)
     ///
     /// # Examples
     ///
@@ -749,20 +750,20 @@ impl MinCutWrapper {
         self.query().value()
     }
 
-    /// Query with LocalKCut certification
+    /// Query with `LocalKCut` certification
     ///
-    /// Uses DeterministicLocalKCut to verify/certify the minimum cut result.
+    /// Uses `DeterministicLocalKCut` to verify/certify the minimum cut result.
     /// This provides additional confidence in the result by cross-checking
-    /// with the paper's LocalKCut algorithm (Theorem 4.1).
+    /// with the paper's `LocalKCut` algorithm (Theorem 4.1).
     ///
     /// # Arguments
     ///
-    /// * `source` - Source vertex for LocalKCut query
+    /// * `source` - Source vertex for `LocalKCut` query
     ///
     /// # Returns
     ///
-    /// A tuple of (min_cut_value, certified) where certified is true
-    /// if LocalKCut confirms the result.
+    /// A tuple of (`min_cut_value`, certified) where certified is true
+    /// if `LocalKCut` confirms the result.
     pub fn query_with_local_kcut(&mut self, source: VertexId) -> (u64, bool) {
         use crate::localkcut::deterministic::DeterministicLocalKCut;
 
@@ -799,7 +800,7 @@ impl MinCutWrapper {
 
     /// Get LocalKCut-based cuts from a vertex
     ///
-    /// Uses DeterministicLocalKCut to find all small cuts near a vertex.
+    /// Uses `DeterministicLocalKCut` to find all small cuts near a vertex.
     /// This is useful for identifying vulnerable parts of the graph.
     ///
     /// # Arguments
@@ -809,7 +810,8 @@ impl MinCutWrapper {
     ///
     /// # Returns
     ///
-    /// Vector of (cut_value, vertex_set) pairs for discovered cuts
+    /// Vector of (`cut_value`, `vertex_set`) pairs for discovered cuts
+    #[must_use]
     pub fn local_cuts(&self, source: VertexId, lambda_max: u64) -> Vec<(f64, Vec<VertexId>)> {
         use crate::localkcut::deterministic::DeterministicLocalKCut;
 
@@ -830,9 +832,10 @@ impl MinCutWrapper {
 
     /// Get the hierarchy decomposition for the current graph
     ///
-    /// Builds a ThreeLevelHierarchy (expander→precluster→cluster) for
+    /// Builds a `ThreeLevelHierarchy` (expander→precluster→cluster) for
     /// the current graph state. This is useful for understanding the
     /// graph structure and for certified mirror cut queries.
+    #[must_use]
     pub fn build_hierarchy(&self) -> crate::cluster::hierarchy::ThreeLevelHierarchy {
         use crate::cluster::hierarchy::{HierarchyConfig, ThreeLevelHierarchy};
 
@@ -865,7 +868,7 @@ impl MinCutWrapper {
     ///
     /// # Returns
     ///
-    /// Vector of (k, min_cut_value) pairs showing how min-cut degrades.
+    /// Vector of (k, `min_cut_value`) pairs showing how min-cut degrades.
     /// An ideal detector shows an elbow early (near true min-cut boundary).
     ///
     /// # Example
@@ -883,6 +886,7 @@ impl MinCutWrapper {
     /// // ...
     /// // Early sharp drop = good detector
     /// ```
+    #[must_use]
     pub fn connectivity_curve(
         &self,
         ranked_edges: &[(VertexId, VertexId, f64)],
@@ -923,8 +927,9 @@ impl MinCutWrapper {
     ///
     /// # Returns
     ///
-    /// (elbow_k, drop_magnitude) - The k value where the biggest drop occurs
+    /// (`elbow_k`, `drop_magnitude`) - The k value where the biggest drop occurs
     /// and how much the min-cut dropped.
+    #[must_use]
     pub fn find_elbow(curve: &[(usize, u64)]) -> Option<(usize, u64)> {
         if curve.len() < 2 {
             return None;
@@ -962,6 +967,7 @@ impl MinCutWrapper {
     ///
     /// Quality score from 0.0 (poor) to 1.0 (perfect).
     /// Perfect means top-k edges exactly match the true cut.
+    #[must_use]
     pub fn detector_quality(
         &self,
         ranked_edges: &[(VertexId, VertexId, f64)],
@@ -975,8 +981,8 @@ impl MinCutWrapper {
         let curve = self.connectivity_curve(ranked_edges, k_max);
 
         // Compute how much the min-cut dropped after removing top-k edges
-        let initial_cut = curve.first().map(|(_, c)| *c).unwrap_or(0);
-        let final_cut = curve.last().map(|(_, c)| *c).unwrap_or(0);
+        let initial_cut = curve.first().map_or(0, |(_, c)| *c);
+        let final_cut = curve.last().map_or(0, |(_, c)| *c);
 
         // Quality = fraction of min-cut eliminated
         if initial_cut == 0 {

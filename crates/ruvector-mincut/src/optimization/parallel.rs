@@ -11,7 +11,7 @@
 use crate::graph::VertexId;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -86,11 +86,13 @@ pub struct WorkStealingScheduler {
 
 impl WorkStealingScheduler {
     /// Create new scheduler with default config
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(ParallelConfig::default())
     }
 
     /// Create with custom config
+    #[must_use]
     pub fn with_config(config: ParallelConfig) -> Self {
         Self {
             config,
@@ -194,11 +196,13 @@ pub struct ParallelLevelUpdater {
 
 impl ParallelLevelUpdater {
     /// Create new parallel updater with default config
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(ParallelConfig::default())
     }
 
     /// Create with custom config
+    #[must_use]
     pub fn with_config(config: ParallelConfig) -> Self {
         Self {
             scheduler: Arc::new(WorkStealingScheduler::with_config(config.clone())),
@@ -289,7 +293,7 @@ impl ParallelLevelUpdater {
 
     /// Process levels in parallel (scalar fallback)
     #[cfg(not(feature = "rayon"))]
-    pub fn process_parallel<F>(&self, levels: &[usize], mut process_fn: F) -> Vec<LevelUpdateResult>
+    pub fn process_parallel<F>(&self, levels: &[usize], process_fn: F) -> Vec<LevelUpdateResult>
     where
         F: FnMut(usize) -> LevelUpdateResult + Clone,
     {
@@ -419,10 +423,7 @@ impl ParallelLevelUpdater {
         F: Fn(&T) -> R,
         R: Clone,
     {
-        items
-            .iter()
-            .map(|item| map_fn(item))
-            .fold(identity, reduce_fn)
+        items.iter().map(map_fn).fold(identity, reduce_fn)
     }
 
     /// Get scheduler reference
@@ -472,6 +473,7 @@ impl ParallelCutOps {
 
     /// Compute boundary size sequentially
     #[cfg(not(feature = "rayon"))]
+    #[must_use]
     pub fn boundary_size_parallel(
         partition: &HashSet<VertexId>,
         adjacency: &HashMap<VertexId, Vec<(VertexId, f64)>>,
@@ -480,6 +482,7 @@ impl ParallelCutOps {
     }
 
     /// Sequential boundary computation
+    #[must_use]
     pub fn boundary_size_sequential(
         partition: &HashSet<VertexId>,
         adjacency: &HashMap<VertexId, Vec<(VertexId, f64)>>,
@@ -487,16 +490,13 @@ impl ParallelCutOps {
         partition
             .iter()
             .map(|&v| {
-                adjacency
-                    .get(&v)
-                    .map(|neighbors| {
-                        neighbors
-                            .iter()
-                            .filter(|(n, _)| !partition.contains(n))
-                            .map(|(_, w)| w)
-                            .sum::<f64>()
-                    })
-                    .unwrap_or(0.0)
+                adjacency.get(&v).map_or(0.0, |neighbors| {
+                    neighbors
+                        .iter()
+                        .filter(|(n, _)| !partition.contains(n))
+                        .map(|(_, w)| w)
+                        .sum::<f64>()
+                })
             })
             .sum()
     }
@@ -523,6 +523,7 @@ impl ParallelCutOps {
 
     /// Find minimum degree vertex sequentially
     #[cfg(not(feature = "rayon"))]
+    #[must_use]
     pub fn min_degree_vertex_parallel(
         vertices: &[VertexId],
         adjacency: &HashMap<VertexId, Vec<(VertexId, f64)>>,
@@ -531,6 +532,7 @@ impl ParallelCutOps {
     }
 
     /// Sequential minimum degree
+    #[must_use]
     pub fn min_degree_vertex_sequential(
         vertices: &[VertexId],
         adjacency: &HashMap<VertexId, Vec<(VertexId, f64)>>,
@@ -538,7 +540,7 @@ impl ParallelCutOps {
         vertices
             .iter()
             .map(|&v| {
-                let degree = adjacency.get(&v).map(|n| n.len()).unwrap_or(0);
+                let degree = adjacency.get(&v).map_or(0, std::vec::Vec::len);
                 (v, degree)
             })
             .filter(|(_, d)| *d > 0)

@@ -8,15 +8,15 @@
 //! - Cross-system performance comparison
 //! - CPU and memory profiling with flamegraphs
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use rand::Rng;
 use rand_distr::{Distribution, Normal, Uniform};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::{BufReader, BufWriter, Write};
+use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Benchmark result for a single test
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -215,7 +215,7 @@ impl ResultWriter {
             writeln!(file, "- **Latency (p95):** {:.2}ms", result.latency_p95)?;
             writeln!(file, "- **Latency (p99):** {:.2}ms", result.latency_p99)?;
             writeln!(file, "- **Latency (p99.9):** {:.2}ms", result.latency_p999)?;
-            writeln!(file, "")?;
+            writeln!(file)?;
             writeln!(file, "### Recall")?;
             writeln!(file, "- **Recall@1:** {:.2}%", result.recall_at_1 * 100.0)?;
             writeln!(file, "- **Recall@10:** {:.2}%", result.recall_at_10 * 100.0)?;
@@ -224,11 +224,11 @@ impl ResultWriter {
                 "- **Recall@100:** {:.2}%",
                 result.recall_at_100 * 100.0
             )?;
-            writeln!(file, "")?;
+            writeln!(file)?;
             writeln!(file, "### Resources")?;
             writeln!(file, "- **Memory:** {:.2} MB", result.memory_mb)?;
             writeln!(file, "- **Build Time:** {:.2}s", result.build_time_secs)?;
-            writeln!(file, "")?;
+            writeln!(file)?;
         }
 
         println!("✓ Written markdown report to: {}", path.display());

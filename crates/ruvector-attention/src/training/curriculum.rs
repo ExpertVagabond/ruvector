@@ -199,7 +199,7 @@ impl TemperatureAnnealing {
     pub fn new(initial: f32, final_temp: f32, steps: usize) -> Self {
         Self {
             initial_temp: initial,
-            final_temp: final_temp,
+            final_temp,
             total_steps: steps,
             current_step: 0,
             decay_type: DecayType::Linear,

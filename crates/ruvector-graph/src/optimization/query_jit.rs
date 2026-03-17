@@ -269,23 +269,23 @@ pub mod specialized_ops {
     use super::*;
 
     /// Vectorized label scan
-    pub fn vectorized_label_scan(label: &str, nodes: &[u64]) -> Vec<u64> {
+    pub fn vectorized_label_scan(_label: &str, nodes: &[u64]) -> Vec<u64> {
         // In a real implementation, this would use SIMD to check labels in parallel
-        nodes.iter().copied().collect()
+        nodes.to_vec()
     }
 
     /// Vectorized property filter
     pub fn vectorized_property_filter(
-        property: &str,
-        predicate: &FilterPredicate,
+        _property: &str,
+        _predicate: &FilterPredicate,
         nodes: &[u64],
     ) -> Vec<u64> {
         // In a real implementation, this would use SIMD for comparisons
-        nodes.iter().copied().collect()
+        nodes.to_vec()
     }
 
     /// Cache-friendly edge expansion
-    pub fn cache_friendly_expand(nodes: &[u64], direction: Direction) -> Vec<(u64, u64)> {
+    pub fn cache_friendly_expand(_nodes: &[u64], _direction: Direction) -> Vec<(u64, u64)> {
         // In a real implementation, this would use prefetching and cache-optimized layout
         Vec::new()
     }

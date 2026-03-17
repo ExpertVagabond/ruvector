@@ -239,7 +239,7 @@ impl SmilesParser {
     pub fn find_rings(&self, smiles: &str) -> Vec<usize> {
         let mut rings = Vec::new();
 
-        for (_i, c) in smiles.chars().enumerate() {
+        for c in smiles.chars() {
             if c.is_numeric() {
                 if let Some(digit) = c.to_digit(10) {
                     rings.push(digit as usize);

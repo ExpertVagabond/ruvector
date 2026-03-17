@@ -246,7 +246,7 @@ pub fn find_text_lines(
 
         // Check if region is on the same line (vertical overlap)
         let line_height = (*prev_h).max(*h);
-        let distance = if y > prev_y { y - prev_y } else { prev_y - y };
+        let distance = y.abs_diff(*prev_y);
 
         if distance < line_height / 2 {
             current_line.push(*region);

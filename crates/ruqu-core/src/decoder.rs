@@ -137,7 +137,7 @@ impl UnionFind {
             (rb, ra)
         };
         self.parent[small] = big;
-        self.parity[big] = self.parity[big] ^ self.parity[small];
+        self.parity[big] ^= self.parity[small];
         if self.rank[big] == self.rank[small] {
             self.rank[big] += 1;
         }
@@ -145,7 +145,7 @@ impl UnionFind {
 
     fn set_parity(&mut self, node: usize, is_defect: bool) {
         let root = self.find(node);
-        self.parity[root] = self.parity[root] ^ is_defect;
+        self.parity[root] ^= is_defect;
     }
 
     fn cluster_parity(&mut self, node: usize) -> bool {
@@ -549,8 +549,8 @@ impl PartitionedDecoder {
         let grid_w = if d > 1 { d - 1 } else { 1 };
         let grid_h = if d > 1 { d - 1 } else { 1 };
 
-        let tiles_x = (grid_w + self.tile_size - 1) / self.tile_size;
-        let tiles_y = (grid_h + self.tile_size - 1) / self.tile_size;
+        let tiles_x = grid_w.div_ceil(self.tile_size);
+        let tiles_y = grid_h.div_ceil(self.tile_size);
 
         let mut tiles = Vec::with_capacity((tiles_x * tiles_y) as usize);
 
@@ -596,7 +596,7 @@ impl PartitionedDecoder {
         let d = syndrome.code_distance;
         let grid_w = if d > 1 { d - 1 } else { 1 };
 
-        let tiles_x = (grid_w + self.tile_size - 1) / self.tile_size;
+        let tiles_x = grid_w.div_ceil(self.tile_size);
 
         let mut all_corrections = Vec::new();
         let mut total_confidence = 0.0;

@@ -200,7 +200,7 @@ impl DynamicQuantizer {
 
     /// Quantize with calibration
     pub fn quantize(&self, data: &[f32]) -> (Vec<i8>, QuantParams) {
-        let mut sorted: Vec<f32> = data.iter().copied().collect();
+        let mut sorted: Vec<f32> = data.to_vec();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
         let idx = ((sorted.len() as f32 * self.percentile / 100.0) as usize).min(sorted.len() - 1);

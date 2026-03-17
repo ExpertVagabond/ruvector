@@ -28,10 +28,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::agi_contract::ContractHealth;
-use crate::reasoning_bank::{
-    Counterexample, MemoryCheckpoint, MemoryClass, ReasoningBank, RollbackWitness, Trajectory,
-    Verdict,
-};
+use crate::reasoning_bank::{ReasoningBank, RollbackWitness, Trajectory, Verdict};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Fast Loop: per-step invariant gating
@@ -337,6 +334,12 @@ pub struct CycleConsolidation {
 pub struct SlowLoop {
     /// History of consolidations
     pub history: Vec<CycleConsolidation>,
+}
+
+impl Default for SlowLoop {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SlowLoop {

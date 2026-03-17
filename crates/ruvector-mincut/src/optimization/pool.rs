@@ -9,9 +9,9 @@
 //! Target: 50-75% memory reduction
 
 use crate::graph::VertexId;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 
 /// Configuration for level pool
 #[derive(Debug, Clone)]
@@ -75,16 +75,19 @@ pub enum LazyLevel {
 
 impl LazyLevel {
     /// Check if level is materialized
+    #[must_use]
     pub fn is_materialized(&self) -> bool {
         matches!(self, LazyLevel::Materialized(_) | LazyLevel::Dirty(_))
     }
 
     /// Check if level needs recomputation
+    #[must_use]
     pub fn is_dirty(&self) -> bool {
         matches!(self, LazyLevel::Dirty(_))
     }
 
     /// Get level data if materialized
+    #[must_use]
     pub fn data(&self) -> Option<&LevelData> {
         match self {
             LazyLevel::Materialized(data) | LazyLevel::Dirty(data) => Some(data),
@@ -120,6 +123,7 @@ pub struct LevelData {
 
 impl LevelData {
     /// Create new level data
+    #[must_use]
     pub fn new(level: usize, capacity: usize) -> Self {
         Self {
             level,
@@ -138,6 +142,7 @@ impl LevelData {
     }
 
     /// Get memory size
+    #[must_use]
     pub fn memory_size(&self) -> usize {
         self.memory_size
     }
@@ -148,12 +153,13 @@ impl LevelData {
 pub struct CompactAdjacency {
     /// Offset for each vertex into neighbors array
     offsets: Vec<u32>,
-    /// Packed neighbors (vertex_id, weight as u16)
+    /// Packed neighbors (`vertex_id`, weight as u16)
     neighbors: Vec<(u16, u16)>,
 }
 
 impl CompactAdjacency {
     /// Create new compact adjacency
+    #[must_use]
     pub fn new(capacity: usize) -> Self {
         Self {
             offsets: Vec::with_capacity(capacity + 1),
@@ -162,6 +168,7 @@ impl CompactAdjacency {
     }
 
     /// Build from edge list
+    #[must_use]
     pub fn from_edges(edges: &[(u16, u16, u16)], num_vertices: usize) -> Self {
         let mut adj: Vec<Vec<(u16, u16)>> = vec![Vec::new(); num_vertices];
 
@@ -183,6 +190,7 @@ impl CompactAdjacency {
     }
 
     /// Get neighbors of vertex
+    #[must_use]
     pub fn neighbors(&self, v: u16) -> &[(u16, u16)] {
         let idx = v as usize;
         if idx + 1 >= self.offsets.len() {
@@ -194,6 +202,7 @@ impl CompactAdjacency {
     }
 
     /// Get degree of vertex
+    #[must_use]
     pub fn degree(&self, v: u16) -> usize {
         let idx = v as usize;
         if idx + 1 >= self.offsets.len() {
@@ -203,12 +212,14 @@ impl CompactAdjacency {
     }
 
     /// Memory size in bytes
+    #[must_use]
     pub fn memory_size(&self) -> usize {
         self.offsets.len() * std::mem::size_of::<u32>()
             + self.neighbors.len() * std::mem::size_of::<(u16, u16)>()
     }
 
     /// Number of vertices
+    #[must_use]
     pub fn num_vertices(&self) -> usize {
         if self.offsets.is_empty() {
             0
@@ -240,11 +251,13 @@ pub struct LevelPool {
 
 impl LevelPool {
     /// Create new level pool with default config
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(PoolConfig::default())
     }
 
     /// Create with custom config
+    #[must_use]
     pub fn with_config(config: PoolConfig) -> Self {
         Self {
             config,
@@ -273,8 +286,7 @@ impl LevelPool {
         let levels = self.levels.read().unwrap();
         levels
             .get(&level_idx)
-            .map(|l| l.is_materialized())
-            .unwrap_or(false)
+            .is_some_and(LazyLevel::is_materialized)
     }
 
     /// Materialize a level with data
@@ -326,9 +338,9 @@ impl LevelPool {
         let mut levels = self.levels.write().unwrap();
 
         if let Some(level) = levels.get(&level_idx) {
-            let last_vertex_count = level.data().map(|d| d.vertices.len()).unwrap_or(0);
+            let last_vertex_count = level.data().map_or(0, |d| d.vertices.len());
 
-            let memory_freed = level.data().map(|d| d.memory_size()).unwrap_or(0);
+            let memory_freed = level.data().map_or(0, LevelData::memory_size);
 
             // Try to recycle the allocation
             if self.config.lazy_dealloc {
@@ -464,6 +476,7 @@ pub struct CompactVertexMapper {
 
 impl CompactVertexMapper {
     /// Create new mapper
+    #[must_use]
     pub fn new() -> Self {
         Self {
             to_compact: HashMap::new(),
@@ -473,6 +486,7 @@ impl CompactVertexMapper {
     }
 
     /// Create from vertex list
+    #[must_use]
     pub fn from_vertices(vertices: &[VertexId]) -> Self {
         let mut mapper = Self::new();
         for &v in vertices {
@@ -495,21 +509,25 @@ impl CompactVertexMapper {
     }
 
     /// Get compact ID if exists
+    #[must_use]
     pub fn get(&self, original: VertexId) -> Option<u16> {
         self.to_compact.get(&original).copied()
     }
 
     /// Get original vertex ID from compact
+    #[must_use]
     pub fn to_original(&self, compact: u16) -> Option<VertexId> {
         self.to_original.get(compact as usize).copied()
     }
 
     /// Number of mapped vertices
+    #[must_use]
     pub fn len(&self) -> usize {
         self.to_original.len()
     }
 
     /// Check if empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.to_original.is_empty()
     }

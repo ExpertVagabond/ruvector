@@ -950,7 +950,11 @@ fn run_level_2(
 }
 
 /// Level 3: Ensemble Arbiter — multiple strategies vote on each puzzle.
-fn run_level_3(config: &SIConfig, bank: &mut ReasoningBank, meta: &MetaParams) -> Result<LevelRaw> {
+fn run_level_3(
+    config: &SIConfig,
+    bank: &mut ReasoningBank,
+    _meta: &MetaParams,
+) -> Result<LevelRaw> {
     let mut raw = RawMetrics::default();
     let mut snapshots = Vec::new();
     let mut ensemble = StrategyEnsemble::new(config.ensemble_size, bank);

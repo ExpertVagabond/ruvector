@@ -4,7 +4,7 @@
 
 use crate::executor::pipeline::RowBatch;
 use crate::executor::plan::{Predicate, Value};
-use crate::executor::{ExecutionError, Result};
+use crate::executor::Result;
 use std::collections::HashMap;
 
 #[cfg(target_arch = "x86_64")]
@@ -171,11 +171,9 @@ impl Filter {
         if pattern.starts_with('%') && pattern.ends_with('%') {
             let p = &pattern[1..pattern.len() - 1];
             s.contains(p)
-        } else if pattern.starts_with('%') {
-            let p = &pattern[1..];
+        } else if let Some(p) = pattern.strip_prefix('%') {
             s.ends_with(p)
-        } else if pattern.ends_with('%') {
-            let p = &pattern[..pattern.len() - 1];
+        } else if let Some(p) = pattern.strip_suffix('%') {
             s.starts_with(p)
         } else {
             s == pattern
@@ -286,10 +284,7 @@ impl Join {
                 .filter_map(|(_, right_col)| row.get(right_col).cloned())
                 .collect();
 
-            self.hash_table
-                .entry(key)
-                .or_insert_with(Vec::new)
-                .push(row);
+            self.hash_table.entry(key).or_default().push(row);
         }
         self.built = true;
     }
@@ -317,7 +312,7 @@ impl Join {
 }
 
 impl Operator for Join {
-    fn execute(&mut self, input: Option<RowBatch>) -> Result<Option<RowBatch>> {
+    fn execute(&mut self, _input: Option<RowBatch>) -> Result<Option<RowBatch>> {
         // Simplified: assumes build side comes first, then probe side
         Ok(None)
     }
@@ -359,7 +354,7 @@ impl Aggregate {
 }
 
 impl Operator for Aggregate {
-    fn execute(&mut self, input: Option<RowBatch>) -> Result<Option<RowBatch>> {
+    fn execute(&mut self, _input: Option<RowBatch>) -> Result<Option<RowBatch>> {
         Ok(None)
     }
 
@@ -427,7 +422,7 @@ impl Sort {
 }
 
 impl Operator for Sort {
-    fn execute(&mut self, input: Option<RowBatch>) -> Result<Option<RowBatch>> {
+    fn execute(&mut self, _input: Option<RowBatch>) -> Result<Option<RowBatch>> {
         Ok(None)
     }
 

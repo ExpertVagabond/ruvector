@@ -341,7 +341,7 @@ impl TemporalSolver {
         if self.prepass_mode == PrepassMode::Full {
             if let Some(dow) = target_dow {
                 let range_days = (end - start).num_days();
-                if range_days <= 60 && range_days >= 0 {
+                if (0..=60).contains(&range_days) {
                     let mut candidates = Vec::new();
                     let mut d = start;
                     while d.weekday() != dow && d <= end {
@@ -351,7 +351,7 @@ impl TemporalSolver {
                         if puzzle.check_date(d).unwrap_or(false) {
                             candidates.push(d);
                         }
-                        d = d + chrono::Duration::days(7);
+                        d += chrono::Duration::days(7);
                     }
                     if !candidates.is_empty() {
                         return (start, end, candidates);
@@ -440,7 +440,7 @@ impl TemporalSolver {
                 }
             }
             if self.skip_weekday.is_some() {
-                current = current + chrono::Duration::days(7);
+                current += chrono::Duration::days(7);
             } else {
                 current = match current.succ_opt() {
                     Some(d) => d,
@@ -698,21 +698,16 @@ use crate::timepuzzles::DifficultyVector;
 /// Skip mode for the temporal solver scan loop.
 /// All modes have access to all skip modes.
 /// What differs is the *policy* that selects the mode.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub enum SkipMode {
     /// Linear scan: check every date in range (1-day increments)
+    #[default]
     None,
     /// Weekday skip: advance by 7 days when DayOfWeek constraint is present
     Weekday,
     /// Hybrid: weekday skip for initial scan, then full refinement pass
     /// around candidates to catch near-misses under noise
     Hybrid,
-}
-
-impl Default for SkipMode {
-    fn default() -> Self {
-        SkipMode::None
-    }
 }
 
 impl std::fmt::Display for SkipMode {
@@ -853,20 +848,15 @@ impl SkipModeStats {
 /// Selectable by PolicyKernel — kept off by default to preserve
 /// learning gradient. If prepass always wins, increase generator
 /// ambiguity to restore gradient.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub enum PrepassMode {
     /// No constraint propagation (default)
+    #[default]
     Off,
     /// Cheap local pruning: InMonth+DayOfMonth only
     Light,
     /// Full arc consistency: InMonth+DayOfMonth+DayOfWeek
     Full,
-}
-
-impl Default for PrepassMode {
-    fn default() -> Self {
-        PrepassMode::Off
-    }
 }
 
 impl std::fmt::Display for PrepassMode {
@@ -1380,7 +1370,7 @@ impl KnowledgeCompiler {
         let mut sig_parts: Vec<String> = puzzle
             .constraints
             .iter()
-            .map(|c| constraint_type_name(c))
+            .map(constraint_type_name)
             .collect();
         sig_parts.sort();
         format!(
@@ -1642,7 +1632,7 @@ impl StrategyRouter {
         let mut families: Vec<String> = puzzle
             .constraints
             .iter()
-            .map(|c| constraint_type_name(c))
+            .map(constraint_type_name)
             .collect();
         families.sort();
         families.dedup();
@@ -1879,7 +1869,7 @@ impl AdaptiveSolver {
         let constraint_types: Vec<String> = puzzle
             .constraints
             .iter()
-            .map(|c| constraint_type_name(c))
+            .map(constraint_type_name)
             .collect();
 
         // Build policy context (same for all modes)

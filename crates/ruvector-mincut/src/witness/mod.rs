@@ -40,9 +40,9 @@
 //! witness.delete_edge(1, 2).unwrap();
 //! ```
 
-use crate::graph::{DynamicGraph, Edge, EdgeId, VertexId, Weight};
+use crate::graph::{DynamicGraph, Edge, VertexId, Weight};
 use crate::linkcut::LinkCutTree;
-use crate::{MinCutError, Result};
+use crate::Result;
 use parking_lot::RwLock;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
@@ -136,11 +136,13 @@ impl WitnessTree {
 
     /// Get current minimum cut value
     #[inline]
+    #[must_use]
     pub fn min_cut_value(&self) -> Weight {
         self.min_cut
     }
 
     /// Get edges in minimum cut
+    #[must_use]
     pub fn min_cut_edges(&self) -> &[Edge] {
         &self.min_cut_edges
     }
@@ -160,21 +162,15 @@ impl WitnessTree {
         let u_exists = (0..self.lct.len()).any(|_| true);
         if u_exists {
             // Check if vertex exists by trying to find root
-            match self.lct.find_root(u) {
-                Err(_) => {
-                    self.lct.make_tree(u, 0.0);
-                }
-                Ok(_) => {}
+            if self.lct.find_root(u).is_err() {
+                self.lct.make_tree(u, 0.0);
             }
         } else {
             self.lct.make_tree(u, 0.0);
         }
 
-        match self.lct.find_root(v) {
-            Err(_) => {
-                self.lct.make_tree(v, 0.0);
-            }
-            Ok(_) => {}
+        if self.lct.find_root(v).is_err() {
+            self.lct.make_tree(v, 0.0);
         }
 
         // Check if u and v are already connected
@@ -256,12 +252,14 @@ impl WitnessTree {
     }
 
     /// Check if edge is a tree edge
+    #[must_use]
     pub fn is_tree_edge(&self, u: VertexId, v: VertexId) -> bool {
         let key = Self::canonical_key(u, v);
         self.tree_edges.contains(&key)
     }
 
     /// Find witness for a tree edge
+    #[must_use]
     pub fn find_witness(&self, u: VertexId, v: VertexId) -> Option<&EdgeWitness> {
         let key = Self::canonical_key(u, v);
         self.witnesses.get(&key)
@@ -284,7 +282,7 @@ impl WitnessTree {
         let mut min_edges = Vec::new();
 
         // Check all tree edge witnesses
-        for (_edge_key, witness) in &self.witnesses {
+        for witness in self.witnesses.values() {
             if witness.cut_value < min_value {
                 min_value = witness.cut_value;
 
@@ -501,7 +499,7 @@ impl WitnessTree {
 pub struct LazyWitnessTree {
     /// Inner witness tree
     inner: WitnessTree,
-    /// Pending updates: (u, v, is_insert)
+    /// Pending updates: (u, v, `is_insert`)
     pending_updates: Vec<(VertexId, VertexId, bool)>,
     /// Threshold for flushing pending updates
     batch_threshold: usize,

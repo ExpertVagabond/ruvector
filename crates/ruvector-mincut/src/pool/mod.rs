@@ -176,7 +176,7 @@ impl BfsPool {
     ///
     /// # Returns
     ///
-    /// BfsResources that will be returned to the pool when dropped
+    /// `BfsResources` that will be returned to the pool when dropped
     ///
     /// # Example
     ///
@@ -196,6 +196,7 @@ impl BfsPool {
     ///
     /// // Resources automatically returned when res is dropped
     /// ```
+    #[must_use]
     pub fn acquire(expected_size: usize) -> BfsResources {
         BFS_POOL.with(|pool| {
             let mut pool = pool.borrow_mut();
@@ -209,7 +210,8 @@ impl BfsPool {
 
     /// Get pool statistics for the current thread
     ///
-    /// Returns (acquires, hits, hit_rate)
+    /// Returns (acquires, hits, `hit_rate`)
+    #[must_use]
     pub fn stats() -> (usize, usize, f64) {
         BFS_POOL.with(|pool| {
             let pool = pool.borrow();
@@ -251,6 +253,7 @@ impl Default for DistanceBfsResources {
 
 impl DistanceBfsResources {
     /// Create new distance BFS resources
+    #[must_use]
     pub fn new() -> Self {
         Self {
             queue: VecDeque::new(),
@@ -260,6 +263,7 @@ impl DistanceBfsResources {
     }
 
     /// Create with capacity
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             queue: VecDeque::with_capacity(capacity),
@@ -319,7 +323,7 @@ impl DistanceBfsResources {
 
 /// Compact bitset pool for small graphs
 ///
-/// Uses fixed-size bitsets instead of HashSets for graphs with <= 256 vertices.
+/// Uses fixed-size bitsets instead of `HashSets` for graphs with <= 256 vertices.
 pub struct CompactBfsResources {
     /// Queue for BFS traversal
     pub queue: VecDeque<VertexId>,
@@ -337,6 +341,7 @@ impl Default for CompactBfsResources {
 
 impl CompactBfsResources {
     /// Create new compact BFS resources
+    #[must_use]
     pub fn new() -> Self {
         Self {
             queue: VecDeque::with_capacity(32),
@@ -354,6 +359,7 @@ impl CompactBfsResources {
 
     /// Check if vertex is visited
     #[inline]
+    #[must_use]
     pub fn is_visited(&self, v: VertexId) -> bool {
         if v >= 256 {
             return false;
@@ -377,6 +383,7 @@ impl CompactBfsResources {
     }
 
     /// Count visited vertices
+    #[must_use]
     pub fn visited_count(&self) -> usize {
         self.visited.iter().map(|w| w.count_ones() as usize).sum()
     }

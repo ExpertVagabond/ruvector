@@ -7,15 +7,15 @@
 //! # Overview
 //!
 //! A **proper cut instance** maintains the minimum proper cut for a graph
-//! under the assumption that the minimum cut value λ ∈ [λ_min, λ_max].
+//! under the assumption that the minimum cut value λ ∈ [`λ_min`, `λ_max`].
 //! This bounded assumption enables more efficient algorithms than maintaining
 //! the exact minimum cut for arbitrary λ values.
 //!
 //! # Guarantees
 //!
-//! - **Correctness**: If λ ∈ [λ_min, λ_max], the instance returns correct results
-//! - **Undefined behavior**: If λ < λ_min, behavior is undefined
-//! - **Detection**: If λ > λ_max, the instance reports `AboveRange`
+//! - **Correctness**: If λ ∈ [`λ_min`, `λ_max`], the instance returns correct results
+//! - **Undefined behavior**: If λ < `λ_min`, behavior is undefined
+//! - **Detection**: If λ > `λ_max`, the instance reports `AboveRange`
 //!
 //! # Update Model
 //!
@@ -31,14 +31,14 @@ use crate::graph::{DynamicGraph, EdgeId, VertexId};
 /// Result from a bounded-range instance query
 ///
 /// Represents the outcome of querying a minimum proper cut instance.
-/// The instance either finds a cut within the bounded range [λ_min, λ_max]
-/// or determines that the minimum cut exceeds λ_max.
+/// The instance either finds a cut within the bounded range [`λ_min`, `λ_max`]
+/// or determines that the minimum cut exceeds `λ_max`.
 #[derive(Debug, Clone)]
 pub enum InstanceResult {
-    /// Cut value is within [λ_min, λ_max], with witness
+    /// Cut value is within [`λ_min`, `λ_max`], with witness
     ///
     /// The witness certifies that a proper cut exists with the given value.
-    /// The value is guaranteed to be in the range [λ_min, λ_max].
+    /// The value is guaranteed to be in the range [`λ_min`, `λ_max`].
     ///
     /// # Fields
     ///
@@ -51,10 +51,10 @@ pub enum InstanceResult {
         witness: WitnessHandle,
     },
 
-    /// Cut value exceeds λ_max
+    /// Cut value exceeds `λ_max`
     ///
     /// The instance has detected that the minimum proper cut value
-    /// is strictly greater than λ_max. No witness is provided because
+    /// is strictly greater than `λ_max`. No witness is provided because
     /// maintaining witnesses above the range is not required.
     ///
     /// This typically triggers a range adjustment in the outer algorithm.
@@ -78,6 +78,7 @@ impl InstanceResult {
     /// let result = InstanceResult::AboveRange;
     /// assert!(!result.is_in_range());
     /// ```
+    #[must_use]
     pub fn is_in_range(&self) -> bool {
         matches!(self, InstanceResult::ValueInRange { .. })
     }
@@ -92,6 +93,7 @@ impl InstanceResult {
     /// let result = InstanceResult::AboveRange;
     /// assert!(result.is_above_range());
     /// ```
+    #[must_use]
     pub fn is_above_range(&self) -> bool {
         matches!(self, InstanceResult::AboveRange)
     }
@@ -112,6 +114,7 @@ impl InstanceResult {
     /// let result = InstanceResult::AboveRange;
     /// assert_eq!(result.value(), None);
     /// ```
+    #[must_use]
     pub fn value(&self) -> Option<u64> {
         match self {
             InstanceResult::ValueInRange { value, .. } => Some(*value),
@@ -135,6 +138,7 @@ impl InstanceResult {
     /// let result = InstanceResult::AboveRange;
     /// assert!(result.witness().is_none());
     /// ```
+    #[must_use]
     pub fn witness(&self) -> Option<&WitnessHandle> {
         match self {
             InstanceResult::ValueInRange { witness, .. } => Some(witness),
@@ -147,7 +151,7 @@ impl InstanceResult {
 ///
 /// This trait defines the interface for maintaining minimum proper cuts
 /// over a dynamic graph, assuming the cut value λ remains within a
-/// bounded range [λ_min, λ_max].
+/// bounded range [`λ_min`, `λ_max`].
 ///
 /// # Proper Cuts
 ///
@@ -156,10 +160,10 @@ impl InstanceResult {
 ///
 /// # Bounded Range Assumption
 ///
-/// The instance assumes λ ∈ [λ_min, λ_max]:
-/// - If λ < λ_min: Undefined behavior
-/// - If λ ∈ [λ_min, λ_max]: Returns `ValueInRange` with witness
-/// - If λ > λ_max: Returns `AboveRange`
+/// The instance assumes λ ∈ [`λ_min`, `λ_max`]:
+/// - If λ < `λ_min`: Undefined behavior
+/// - If λ ∈ [`λ_min`, `λ_max`]: Returns `ValueInRange` with witness
+/// - If λ > `λ_max`: Returns `AboveRange`
 ///
 /// # Update Protocol
 ///
@@ -175,7 +179,7 @@ pub trait ProperCutInstance: Send + Sync {
     /// Initialize instance on graph with given bounds
     ///
     /// Creates a new instance that maintains minimum proper cuts
-    /// for the given graph, assuming λ ∈ [λ_min, λ_max].
+    /// for the given graph, assuming λ ∈ [`λ_min`, `λ_max`].
     ///
     /// # Arguments
     ///
@@ -185,7 +189,7 @@ pub trait ProperCutInstance: Send + Sync {
     ///
     /// # Panics
     ///
-    /// May panic if λ_min > λ_max or if the graph is invalid.
+    /// May panic if `λ_min` > `λ_max` or if the graph is invalid.
     fn init(graph: &DynamicGraph, lambda_min: u64, lambda_max: u64) -> Self
     where
         Self: Sized;
@@ -197,7 +201,7 @@ pub trait ProperCutInstance: Send + Sync {
     ///
     /// # Arguments
     ///
-    /// * `edges` - Slice of (edge_id, source, target) tuples to insert
+    /// * `edges` - Slice of (`edge_id`, source, target) tuples to insert
     fn apply_inserts(&mut self, edges: &[(EdgeId, VertexId, VertexId)]);
 
     /// Apply batch of edge deletions
@@ -207,7 +211,7 @@ pub trait ProperCutInstance: Send + Sync {
     ///
     /// # Arguments
     ///
-    /// * `edges` - Slice of (edge_id, source, target) tuples to delete
+    /// * `edges` - Slice of (`edge_id`, source, target) tuples to delete
     fn apply_deletes(&mut self, edges: &[(EdgeId, VertexId, VertexId)]);
 
     /// Query current minimum proper cut
@@ -217,8 +221,8 @@ pub trait ProperCutInstance: Send + Sync {
     ///
     /// # Returns
     ///
-    /// - `ValueInRange { value, witness }` if λ ∈ [λ_min, λ_max]
-    /// - `AboveRange` if λ > λ_max
+    /// - `ValueInRange { value, witness }` if λ ∈ [`λ_min`, `λ_max`]
+    /// - `AboveRange` if λ > `λ_max`
     ///
     /// # Complexity
     ///
@@ -227,10 +231,10 @@ pub trait ProperCutInstance: Send + Sync {
 
     /// Get the lambda bounds for this instance
     ///
-    /// Returns the [λ_min, λ_max] bounds this instance was initialized with.
+    /// Returns the [`λ_min`, `λ_max`] bounds this instance was initialized with.
     ///
     /// # Returns
     ///
-    /// A tuple (λ_min, λ_max)
+    /// A tuple (`λ_min`, `λ_max`)
     fn bounds(&self) -> (u64, u64);
 }

@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 /// Configuration for a simulation run.
+#[derive(Default)]
 pub struct SimConfig {
     /// Deterministic seed. `None` uses OS entropy.
     pub seed: Option<u64>,
@@ -18,16 +19,6 @@ pub struct SimConfig {
     pub noise: Option<NoiseModel>,
     /// Number of repeated shots (`None` = single run returning state).
     pub shots: Option<u32>,
-}
-
-impl Default for SimConfig {
-    fn default() -> Self {
-        Self {
-            seed: None,
-            noise: None,
-            shots: None,
-        }
-    }
 }
 
 /// Result of a single simulation run (state + measurements).

@@ -5,10 +5,9 @@
 
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
-use core::time::Duration;
 
 use crate::delta::{Delta, VectorDelta};
-use crate::error::{DeltaError, Result};
+use crate::error::Result;
 
 /// Configuration for delta streams
 #[derive(Debug, Clone)]

@@ -1,4 +1,4 @@
-//! Deterministic LocalKCut Algorithm
+//! Deterministic `LocalKCut` Algorithm
 //!
 //! Implementation of the deterministic local minimum cut algorithm from:
 //! "Deterministic and Exact Fully-dynamic Minimum Cut of Superpolylogarithmic
@@ -10,9 +10,9 @@
 //! - Color-coded DFS for cut enumeration
 
 use crate::graph::{VertexId, Weight};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
-/// Color for edge partitioning in deterministic LocalKCut.
+/// Color for edge partitioning in deterministic `LocalKCut`.
 /// Uses 4-color scheme for forest/non-forest edge classification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EdgeColor {
@@ -40,6 +40,7 @@ pub struct EdgeColoring {
 
 impl EdgeColoring {
     /// Create new empty coloring
+    #[must_use]
     pub fn new(a: usize, b: usize) -> Self {
         Self {
             colors: HashMap::new(),
@@ -49,6 +50,7 @@ impl EdgeColoring {
     }
 
     /// Get color for edge
+    #[must_use]
     pub fn get(&self, u: VertexId, v: VertexId) -> Option<EdgeColor> {
         let key = if u < v { (u, v) } else { (v, u) };
         self.colors.get(&key).copied()
@@ -61,6 +63,7 @@ impl EdgeColoring {
     }
 
     /// Check if edge has specific color
+    #[must_use]
     pub fn has_color(&self, u: VertexId, v: VertexId, color: EdgeColor) -> bool {
         self.get(u, v) == Some(color)
     }
@@ -68,6 +71,7 @@ impl EdgeColoring {
 
 /// Generate color coding family per Lemma 3.3
 /// Family size: 2^{O(min(a,b) · log(a+b))} · log n
+#[must_use]
 pub fn generate_coloring_family(a: usize, b: usize, num_edges: usize) -> Vec<EdgeColoring> {
     // Simplified implementation using hashing-based derandomization
     // Full implementation would use perfect hash families
@@ -78,7 +82,7 @@ pub fn generate_coloring_family(a: usize, b: usize, num_edges: usize) -> Vec<Edg
 
     let mut family = Vec::with_capacity(family_size);
 
-    for seed in 0..family_size {
+    for _seed in 0..family_size {
         let coloring = EdgeColoring::new(a, b);
         // Each coloring in the family uses different hash function
         // to partition edges
@@ -93,7 +97,7 @@ pub fn generate_coloring_family(a: usize, b: usize, num_edges: usize) -> Vec<Edg
 pub struct GreedyForestPacking {
     /// Number of forests
     pub num_forests: usize,
-    /// Forest assignment for each edge: edge -> forest_id
+    /// Forest assignment for each edge: edge -> `forest_id`
     edge_forest: HashMap<(VertexId, VertexId), usize>,
     /// Edges in each forest
     forests: Vec<HashSet<(VertexId, VertexId)>>,
@@ -103,7 +107,8 @@ pub struct GreedyForestPacking {
 
 impl GreedyForestPacking {
     /// Create new forest packing with k forests
-    /// Per paper: k = 6λ_max · log m / ε²
+    /// Per paper: k = `6λ_max` · log m / ε²
+    #[must_use]
     pub fn new(num_forests: usize) -> Self {
         Self {
             num_forests,
@@ -115,8 +120,10 @@ impl GreedyForestPacking {
 
     /// Find root in forest using path compression
     fn find_root(&mut self, forest_id: usize, v: VertexId) -> VertexId {
-        if !self.forest_parents[forest_id].contains_key(&v) {
-            self.forest_parents[forest_id].insert(v, v);
+        if let std::collections::hash_map::Entry::Vacant(e) =
+            self.forest_parents[forest_id].entry(v)
+        {
+            e.insert(v);
             return v;
         }
 
@@ -191,24 +198,27 @@ impl GreedyForestPacking {
     }
 
     /// Check if edge is a tree edge in some forest
+    #[must_use]
     pub fn is_tree_edge(&self, u: VertexId, v: VertexId) -> bool {
         let key = if u < v { (u, v) } else { (v, u) };
         self.edge_forest.contains_key(&key)
     }
 
     /// Get forest ID for an edge
+    #[must_use]
     pub fn get_forest(&self, u: VertexId, v: VertexId) -> Option<usize> {
         let key = if u < v { (u, v) } else { (v, u) };
         self.edge_forest.get(&key).copied()
     }
 
     /// Get all edges in a specific forest
+    #[must_use]
     pub fn forest_edges(&self, forest_id: usize) -> &HashSet<(VertexId, VertexId)> {
         &self.forests[forest_id]
     }
 }
 
-/// A discovered cut from LocalKCut query
+/// A discovered cut from `LocalKCut` query
 #[derive(Debug, Clone)]
 pub struct LocalCut {
     /// Vertices in the cut set S
@@ -221,7 +231,7 @@ pub struct LocalCut {
     pub volume: usize,
 }
 
-/// Deterministic LocalKCut data structure
+/// Deterministic `LocalKCut` data structure
 /// Per Theorem 4.1 of the paper
 #[derive(Debug)]
 pub struct DeterministicLocalKCut {
@@ -244,7 +254,8 @@ pub struct DeterministicLocalKCut {
 }
 
 impl DeterministicLocalKCut {
-    /// Create new LocalKCut structure
+    /// Create new `LocalKCut` structure
+    #[must_use]
     pub fn new(lambda_max: u64, nu: usize, beta: usize) -> Self {
         // Number of forests: 6λ_max · log m / ε² (simplified)
         let num_forests = ((6 * lambda_max) as usize).max(10);
@@ -321,8 +332,9 @@ impl DeterministicLocalKCut {
         self.forests.delete_edge(u, v);
     }
 
-    /// Query: Find all cuts containing vertex v with volume ≤ ν and cut-size ≤ λ_max
+    /// Query: Find all cuts containing vertex v with volume ≤ ν and cut-size ≤ `λ_max`
     /// This is Algorithm 4.1 from the paper
+    #[must_use]
     pub fn query(&self, v: VertexId) -> Vec<LocalCut> {
         let mut results = Vec::new();
         let mut seen_cuts: HashSet<Vec<VertexId>> = HashSet::new();
@@ -336,7 +348,7 @@ impl DeterministicLocalKCut {
                     {
                         // Deduplicate cuts
                         let mut sorted_vertices: Vec<_> = cut.vertices.iter().copied().collect();
-                        sorted_vertices.sort();
+                        sorted_vertices.sort_unstable();
 
                         if !seen_cuts.contains(&sorted_vertices)
                             && cut.cut_value <= self.lambda_max as f64
@@ -433,11 +445,13 @@ impl DeterministicLocalKCut {
     }
 
     /// Get all vertices
+    #[must_use]
     pub fn vertices(&self) -> Vec<VertexId> {
         self.adjacency.keys().copied().collect()
     }
 
     /// Get neighbors of a vertex
+    #[must_use]
     pub fn neighbors(&self, v: VertexId) -> Vec<(VertexId, Weight)> {
         self.adjacency
             .get(&v)

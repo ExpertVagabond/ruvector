@@ -56,7 +56,7 @@ pub struct WitnessHandle {
 ///
 /// The witness represents a connected set U ⊆ V where:
 /// - U contains the seed vertex
-/// - |δ(U)| = boundary_size
+/// - |δ(U)| = `boundary_size`
 /// - membership\[v\] = true iff v ∈ U
 #[derive(Debug)]
 pub struct ImplicitWitness {
@@ -96,16 +96,15 @@ impl WitnessHandle {
     /// let witness = WitnessHandle::new(0, membership, 5);
     /// assert_eq!(witness.seed(), 0);
     /// ```
+    #[must_use]
     pub fn new(seed: VertexId, membership: RoaringBitmap, boundary_size: u64) -> Self {
         debug_assert!(
-            seed <= u32::MAX as u64,
-            "Seed vertex {} exceeds u32::MAX",
-            seed
+            u32::try_from(seed).is_ok(),
+            "Seed vertex {seed} exceeds u32::MAX"
         );
         debug_assert!(
             membership.contains(seed as u32),
-            "Seed vertex {} must be in membership set",
-            seed
+            "Seed vertex {seed} must be in membership set"
         );
 
         let hash = Self::compute_hash(seed, &membership);
@@ -128,7 +127,7 @@ impl WitnessHandle {
         seed.hash(&mut hasher);
 
         // Hash the membership bitmap by iterating its values
-        for vertex in membership.iter() {
+        for vertex in membership {
             vertex.hash(&mut hasher);
         }
 
@@ -157,8 +156,9 @@ impl WitnessHandle {
     /// assert!(!witness.contains(15));
     /// ```
     #[inline]
+    #[must_use]
     pub fn contains(&self, v: VertexId) -> bool {
-        if v > u32::MAX as u64 {
+        if v > u64::from(u32::MAX) {
             return false;
         }
         self.inner.membership.contains(v as u32)
@@ -178,6 +178,7 @@ impl WitnessHandle {
     /// assert_eq!(witness.boundary_size(), 7);
     /// ```
     #[inline]
+    #[must_use]
     pub fn boundary_size(&self) -> u64 {
         self.inner.boundary_size
     }
@@ -194,6 +195,7 @@ impl WitnessHandle {
     /// assert_eq!(witness.seed(), 42);
     /// ```
     #[inline]
+    #[must_use]
     pub fn seed(&self) -> VertexId {
         self.inner.seed
     }
@@ -202,6 +204,7 @@ impl WitnessHandle {
     ///
     /// Used for fast equality checks without comparing full membership sets.
     #[inline]
+    #[must_use]
     pub fn hash(&self) -> u64 {
         self.inner.hash
     }
@@ -220,7 +223,7 @@ impl WitnessHandle {
     ///
     /// # Note
     ///
-    /// This method assumes vertices are numbered 0..max_vertex. For sparse
+    /// This method assumes vertices are numbered `0..max_vertex`. For sparse
     /// graphs, V \ U may contain vertex IDs that don't exist in the graph.
     ///
     /// # Examples
@@ -241,11 +244,12 @@ impl WitnessHandle {
     /// assert!(u.contains(&2));
     /// assert!(!u.contains(&3));
     /// ```
+    #[must_use]
     pub fn materialize_partition(&self) -> (HashSet<VertexId>, HashSet<VertexId>) {
-        let u: HashSet<VertexId> = self.inner.membership.iter().map(|v| v as u64).collect();
+        let u: HashSet<VertexId> = self.inner.membership.iter().map(u64::from).collect();
 
         // Find the maximum vertex ID to determine graph size
-        let max_vertex = self.inner.membership.max().unwrap_or(0) as u64;
+        let max_vertex = u64::from(self.inner.membership.max().unwrap_or(0));
 
         // Create complement set
         let v_minus_u: HashSet<VertexId> = (0..=max_vertex)
@@ -267,6 +271,7 @@ impl WitnessHandle {
     /// assert_eq!(witness.cardinality(), 3);
     /// ```
     #[inline]
+    #[must_use]
     pub fn cardinality(&self) -> u64 {
         self.inner.membership.len()
     }
@@ -391,6 +396,7 @@ impl LazyWitness {
     /// * `seed` - Seed vertex defining the cut
     /// * `radius` - Radius of local search used
     /// * `boundary_size` - Pre-computed boundary size
+    #[must_use]
     pub fn new(seed: VertexId, radius: usize, boundary_size: u64) -> Self {
         Self {
             seed,
@@ -494,6 +500,7 @@ pub struct LazyWitnessBatch {
 
 impl LazyWitnessBatch {
     /// Create a new empty batch
+    #[must_use]
     pub fn new() -> Self {
         Self {
             witnesses: Vec::new(),
@@ -502,6 +509,7 @@ impl LazyWitnessBatch {
     }
 
     /// Create batch with capacity
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             witnesses: Vec::with_capacity(capacity),

@@ -1,15 +1,14 @@
-//! WASM Batch Operations and TypedArray Optimizations
+//! WASM Batch Operations and `TypedArray` Optimizations
 //!
 //! Optimizations specific to WebAssembly execution:
 //! - Batch FFI calls to minimize overhead
 //! - Pre-allocated WASM memory
-//! - TypedArray bulk transfers
+//! - `TypedArray` bulk transfers
 //! - Memory alignment for SIMD
 //!
 //! Target: 10x reduction in FFI overhead
 
 use crate::graph::VertexId;
-use std::collections::HashMap;
 
 /// Configuration for WASM batch operations
 #[derive(Debug, Clone)]
@@ -65,7 +64,7 @@ pub struct BatchResult {
     pub error: Option<String>,
 }
 
-/// TypedArray transfer for efficient WASM memory access
+/// `TypedArray` transfer for efficient WASM memory access
 ///
 /// Provides aligned memory buffers for bulk data transfer between
 /// JavaScript and WASM.
@@ -85,11 +84,13 @@ pub struct TypedArrayTransfer {
 
 impl TypedArrayTransfer {
     /// Create new transfer with default buffer size
+    #[must_use]
     pub fn new() -> Self {
         Self::with_capacity(1024)
     }
 
     /// Create with specific capacity
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             f64_buffer: Vec::with_capacity(capacity),
@@ -127,6 +128,7 @@ impl TypedArrayTransfer {
     }
 
     /// Get edges from buffer
+    #[must_use]
     pub fn get_edges(&self) -> Vec<(VertexId, VertexId, f64)> {
         let mut edges = Vec::with_capacity(self.f64_buffer.len());
 
@@ -140,16 +142,19 @@ impl TypedArrayTransfer {
     }
 
     /// Get f64 buffer as raw pointer (for FFI)
+    #[must_use]
     pub fn f64_ptr(&self) -> *const f64 {
         self.f64_buffer.as_ptr()
     }
 
     /// Get u64 buffer as raw pointer (for FFI)
+    #[must_use]
     pub fn u64_ptr(&self) -> *const u64 {
         self.u64_buffer.as_ptr()
     }
 
     /// Get buffer lengths
+    #[must_use]
     pub fn len(&self) -> (usize, usize, usize) {
         (
             self.f64_buffer.len(),
@@ -159,6 +164,7 @@ impl TypedArrayTransfer {
     }
 
     /// Check if empty
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.f64_buffer.is_empty() && self.u64_buffer.is_empty()
     }
@@ -185,11 +191,13 @@ pub struct WasmBatchOps {
 
 impl WasmBatchOps {
     /// Create new batch executor with default config
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(BatchConfig::default())
     }
 
     /// Create with custom config
+    #[must_use]
     pub fn with_config(config: BatchConfig) -> Self {
         Self {
             transfer: TypedArrayTransfer::with_capacity(config.buffer_size / 8),
@@ -359,11 +367,13 @@ impl WasmBatchOps {
     }
 
     /// Get number of pending operations
+    #[must_use]
     pub fn pending_count(&self) -> usize {
         self.pending.len()
     }
 
     /// Get statistics
+    #[must_use]
     pub fn stats(&self) -> BatchStats {
         BatchStats {
             total_operations: self.total_ops,
@@ -423,6 +433,7 @@ pub struct WasmMemoryRegion {
 
 impl WasmMemoryRegion {
     /// Create new memory region
+    #[must_use]
     pub fn new(size: usize) -> Self {
         // Round up to alignment
         let aligned_size = (size + 63) & !63;
@@ -451,6 +462,7 @@ impl WasmMemoryRegion {
     }
 
     /// Get a slice at the given offset
+    #[must_use]
     pub fn get_slice(&self, offset: usize, len: usize) -> Option<&[u8]> {
         if offset + len <= self.capacity {
             Some(&self.data[offset..offset + len])
@@ -476,16 +488,19 @@ impl WasmMemoryRegion {
     }
 
     /// Get remaining capacity
+    #[must_use]
     pub fn remaining(&self) -> usize {
         self.capacity - self.offset
     }
 
     /// Get used bytes
+    #[must_use]
     pub fn used(&self) -> usize {
         self.offset
     }
 
     /// Get raw pointer
+    #[must_use]
     pub fn as_ptr(&self) -> *const u8 {
         self.data.as_ptr()
     }

@@ -13,7 +13,6 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use uuid::Uuid;
 
 /// Transaction isolation level
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -135,7 +134,7 @@ impl TransactionManager {
         for (node_id, node) in &writes.nodes {
             self.node_versions
                 .entry(node_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(Version {
                     created_at: commit_time,
                     deleted_at: None,
@@ -148,7 +147,7 @@ impl TransactionManager {
         for (edge_id, edge) in &writes.edges {
             self.edge_versions
                 .entry(edge_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(Version {
                     created_at: commit_time,
                     deleted_at: None,
@@ -161,7 +160,7 @@ impl TransactionManager {
         for (hyperedge_id, hyperedge) in &writes.hyperedges {
             self.hyperedge_versions
                 .entry(hyperedge_id.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(Version {
                     created_at: commit_time,
                     deleted_at: None,

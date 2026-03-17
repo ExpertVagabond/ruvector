@@ -34,8 +34,8 @@ pub fn clahe(image: &GrayImage, clip_limit: f32, tile_size: u32) -> Result<GrayI
     let (width, height) = image.dimensions();
     let mut result = GrayImage::new(width, height);
 
-    let tiles_x = (width + tile_size - 1) / tile_size;
-    let tiles_y = (height + tile_size - 1) / tile_size;
+    let tiles_x = width.div_ceil(tile_size);
+    let tiles_y = height.div_ceil(tile_size);
 
     // Compute histograms and CDFs for each tile
     let mut tile_cdfs = vec![vec![Vec::new(); tiles_x as usize]; tiles_y as usize];

@@ -42,7 +42,7 @@ impl AttentionConfig {
             ));
         }
 
-        if self.dim % self.num_heads != 0 {
+        if !self.dim.is_multiple_of(self.num_heads) {
             return Err(AttentionError::InvalidHeadCount {
                 dim: self.dim,
                 num_heads: self.num_heads,

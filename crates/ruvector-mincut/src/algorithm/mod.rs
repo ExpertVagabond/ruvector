@@ -15,9 +15,9 @@ pub mod replacement;
 
 pub use replacement::{ReplacementEdgeIndex, ReplacementIndexStats};
 
-use crate::error::{MinCutError, Result};
+use crate::error::Result;
 use crate::euler::EulerTourTree;
-use crate::graph::{DynamicGraph, Edge, EdgeId, VertexId, Weight};
+use crate::graph::{DynamicGraph, Edge, VertexId, Weight};
 use crate::linkcut::LinkCutTree;
 use crate::tree::HierarchicalDecomposition;
 use parking_lot::RwLock;
@@ -105,6 +105,7 @@ pub struct DynamicMinCut {
 
 impl DynamicMinCut {
     /// Create a new dynamic minimum cut structure
+    #[must_use]
     pub fn new(config: MinCutConfig) -> Self {
         let empty_graph = Arc::new(DynamicGraph::new());
         Self {
@@ -200,8 +201,8 @@ impl DynamicMinCut {
 
         // Ensure vertices exist in data structures
         // Create vertices in link-cut tree and Euler tour tree if they don't exist
-        let u_exists = self.link_cut_tree.len() > 0 && self.link_cut_tree.find_root(u).is_ok();
-        let v_exists = self.link_cut_tree.len() > 0 && self.link_cut_tree.find_root(v).is_ok();
+        let u_exists = !self.link_cut_tree.is_empty() && self.link_cut_tree.find_root(u).is_ok();
+        let v_exists = !self.link_cut_tree.is_empty() && self.link_cut_tree.find_root(v).is_ok();
 
         if !u_exists {
             self.link_cut_tree.make_tree(u, 0.0);
@@ -215,12 +216,12 @@ impl DynamicMinCut {
         // Check if they're already in different components
         let connected = self.link_cut_tree.connected(u, v);
 
-        if !connected {
-            // Vertices are in different components - this edge connects them
-            self.handle_bridge_edge(u, v, weight)?;
-        } else {
+        if connected {
             // Edge creates a cycle - this is a non-tree edge
             self.handle_cycle_edge(u, v, weight)?;
+        } else {
+            // Vertices are in different components - this edge connects them
+            self.handle_bridge_edge(u, v, weight)?;
         }
 
         // Rebuild decomposition with updated graph
@@ -278,6 +279,7 @@ impl DynamicMinCut {
     }
 
     /// Get the current minimum cut value (O(1))
+    #[must_use]
     pub fn min_cut_value(&self) -> f64 {
         let start_time = Instant::now();
 
@@ -294,6 +296,7 @@ impl DynamicMinCut {
     }
 
     /// Get detailed minimum cut result
+    #[must_use]
     pub fn min_cut(&self) -> MinCutResult {
         let value = self.min_cut_value();
         let (partition_s, partition_t) = self.partition();
@@ -313,6 +316,7 @@ impl DynamicMinCut {
     }
 
     /// Get the cut partition
+    #[must_use]
     pub fn partition(&self) -> (Vec<VertexId>, Vec<VertexId>) {
         // Use the decomposition's partition
         let (set_a, set_b) = self.decomposition.min_cut_partition();
@@ -320,6 +324,7 @@ impl DynamicMinCut {
     }
 
     /// Get edges in the minimum cut
+    #[must_use]
     pub fn cut_edges(&self) -> Vec<Edge> {
         let (partition_s, partition_t) = self.partition();
         let partition_t_set: std::collections::HashSet<_> = partition_t.iter().copied().collect();
@@ -342,12 +347,14 @@ impl DynamicMinCut {
     }
 
     /// Check if graph is connected
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         let graph = self.graph.read();
         graph.is_connected()
     }
 
     /// Get algorithm statistics
+    #[must_use]
     pub fn stats(&self) -> AlgorithmStats {
         self.stats.read().clone()
     }
@@ -358,21 +365,25 @@ impl DynamicMinCut {
     }
 
     /// Get configuration
+    #[must_use]
     pub fn config(&self) -> &MinCutConfig {
         &self.config
     }
 
     /// Get reference to underlying graph
+    #[must_use]
     pub fn graph(&self) -> Arc<RwLock<DynamicGraph>> {
         Arc::clone(&self.graph)
     }
 
     /// Number of vertices
+    #[must_use]
     pub fn num_vertices(&self) -> usize {
         self.graph.read().num_vertices()
     }
 
     /// Number of edges
+    #[must_use]
     pub fn num_edges(&self) -> usize {
         self.graph.read().num_edges()
     }
@@ -583,7 +594,7 @@ impl DynamicMinCut {
     }
 }
 
-/// Builder for DynamicMinCut
+/// Builder for `DynamicMinCut`
 pub struct MinCutBuilder {
     config: MinCutConfig,
     initial_edges: Vec<(VertexId, VertexId, Weight)>,
@@ -591,6 +602,7 @@ pub struct MinCutBuilder {
 
 impl MinCutBuilder {
     /// Create a new builder
+    #[must_use]
     pub fn new() -> Self {
         Self {
             config: MinCutConfig::default(),
@@ -599,12 +611,14 @@ impl MinCutBuilder {
     }
 
     /// Use exact algorithm
+    #[must_use]
     pub fn exact(mut self) -> Self {
         self.config.approximate = false;
         self
     }
 
     /// Use approximate algorithm with given epsilon
+    #[must_use]
     pub fn approximate(mut self, epsilon: f64) -> Self {
         assert!(epsilon > 0.0 && epsilon <= 1.0, "Epsilon must be in (0, 1]");
         self.config.approximate = true;
@@ -613,18 +627,21 @@ impl MinCutBuilder {
     }
 
     /// Set maximum cut size for exact algorithm
+    #[must_use]
     pub fn max_cut_size(mut self, size: usize) -> Self {
         self.config.max_exact_cut_size = size;
         self
     }
 
     /// Enable or disable parallel computation
+    #[must_use]
     pub fn parallel(mut self, enabled: bool) -> Self {
         self.config.parallel = enabled;
         self
     }
 
     /// Add initial edges
+    #[must_use]
     pub fn with_edges(mut self, edges: Vec<(VertexId, VertexId, Weight)>) -> Self {
         self.initial_edges = edges;
         self

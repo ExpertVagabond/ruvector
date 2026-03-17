@@ -56,7 +56,7 @@ impl Tensor {
     /// # Errors
     /// Returns `GnnError::InvalidShape` if shape is empty or contains zero
     pub fn zeros(shape: &[usize]) -> Result<Self> {
-        if shape.is_empty() || shape.iter().any(|&d| d == 0) {
+        if shape.is_empty() || shape.contains(&0) {
             return Err(GnnError::invalid_shape(format!(
                 "Invalid shape: {:?}",
                 shape

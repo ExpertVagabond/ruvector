@@ -169,7 +169,7 @@ impl NeumannSolver {
                 break;
             }
             for j in 0..n {
-                v[j] = w[j] / w_norm as f32;
+                v[j] = w[j] / w_norm;
             }
         }
 

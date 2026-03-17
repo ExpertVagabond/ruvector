@@ -57,8 +57,8 @@ pub use strange_loop::{MetaAction, MetaCognitiveMinCut, MetaLevel, StrangeLoopCo
 pub use synapse::{STDPConfig, Synapse, SynapseMatrix};
 pub use time_crystal::{CPGConfig, OscillatorNeuron, PhaseTopology, TimeCrystalCPG};
 
-use crate::graph::{DynamicGraph, EdgeId, VertexId, Weight};
-use std::time::{Duration, Instant};
+use crate::graph::{DynamicGraph, Weight};
+use std::time::Duration;
 
 /// Simulation time in milliseconds
 pub type SimTime = f64;
@@ -120,7 +120,7 @@ pub struct SpikeComputeResult {
     pub energy: f64,
     /// Duration of computation
     pub duration: Duration,
-    /// MinCut value discovered/optimized
+    /// `MinCut` value discovered/optimized
     pub mincut_value: Option<f64>,
 }
 
@@ -155,6 +155,7 @@ pub struct DefaultSpikeGraphTransducer {
 
 impl DefaultSpikeGraphTransducer {
     /// Create a new transducer with default parameters
+    #[must_use]
     pub fn new() -> Self {
         Self {
             weight_factor: 0.01,
@@ -237,13 +238,14 @@ impl GraphToSpike for DefaultSpikeGraphTransducer {
     }
 }
 
-/// Maximum spikes to process for synchrony (DoS protection)
+/// Maximum spikes to process for synchrony (`DoS` protection)
 const MAX_SYNCHRONY_SPIKES: usize = 10_000;
 
 /// Synchrony measurement for spike trains using efficient O(n log n) algorithm
 ///
 /// Uses time-binning approach instead of O(n²) pairwise comparison.
 /// For large spike trains, uses sampling to maintain O(n log n) complexity.
+#[must_use]
 pub fn compute_synchrony(spikes: &[Spike], window_ms: f64) -> f64 {
     if spikes.len() < 2 {
         return 0.0;
@@ -305,6 +307,7 @@ pub fn compute_synchrony(spikes: &[Spike], window_ms: f64) -> f64 {
 }
 
 /// Lyapunov-like energy function combining mincut and synchrony
+#[must_use]
 pub fn compute_energy(mincut: f64, synchrony: f64) -> f64 {
     -mincut - synchrony
 }

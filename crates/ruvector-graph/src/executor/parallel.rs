@@ -2,8 +2,7 @@
 //!
 //! Implements data parallelism for graph queries
 
-use crate::executor::operators::Operator;
-use crate::executor::pipeline::{ExecutionContext, RowBatch};
+use crate::executor::pipeline::RowBatch;
 use crate::executor::plan::PhysicalPlan;
 use crate::executor::{ExecutionError, Result};
 use rayon::prelude::*;
@@ -98,8 +97,8 @@ impl ParallelExecutor {
     }
 
     /// Execute plan sequentially (fallback)
-    fn execute_sequential(&self, plan: &PhysicalPlan) -> Result<Vec<RowBatch>> {
-        let mut results = Vec::new();
+    fn execute_sequential(&self, _plan: &PhysicalPlan) -> Result<Vec<RowBatch>> {
+        let results = Vec::new();
         // Simplified sequential execution
         Ok(results)
     }
@@ -134,9 +133,9 @@ impl ParallelExecutor {
     /// Execute a partition of the data
     fn execute_partition(
         &self,
-        plan: &PhysicalPlan,
-        partition_id: usize,
-        num_partitions: usize,
+        _plan: &PhysicalPlan,
+        _partition_id: usize,
+        _num_partitions: usize,
     ) -> Result<Option<RowBatch>> {
         // Simplified partition execution
         Ok(None)
@@ -162,9 +161,9 @@ impl ParallelExecutor {
     /// Execute a stage of operators
     fn execute_stage(
         &self,
-        plan: &PhysicalPlan,
-        start: usize,
-        end: usize,
+        _plan: &PhysicalPlan,
+        _start: usize,
+        _end: usize,
     ) -> Result<Vec<RowBatch>> {
         // Simplified stage execution
         Ok(Vec::new())
@@ -179,12 +178,9 @@ impl ParallelExecutor {
     where
         F: Fn(RowBatch) -> Result<RowBatch> + Send + Sync,
     {
-        let results: Vec<_> = self.thread_pool.install(|| {
-            batches
-                .into_par_iter()
-                .map(|batch| processor(batch))
-                .collect()
-        });
+        let results: Vec<_> = self
+            .thread_pool
+            .install(|| batches.into_par_iter().map(processor).collect());
 
         // Collect results and check for errors
         results.into_iter().collect()
@@ -209,7 +205,7 @@ impl ParallelExecutor {
         let mut groups: HashMap<K, Vec<RowBatch>> = HashMap::new();
         for batch in batches {
             let key = key_fn(&batch);
-            groups.entry(key).or_insert_with(Vec::new).push(batch);
+            groups.entry(key).or_default().push(batch);
         }
 
         // Aggregate each group in parallel
@@ -246,7 +242,7 @@ impl ScanPartitioner {
 
     /// Get partition range for a given partition ID
     pub fn partition_range(&self, partition_id: usize) -> (usize, usize) {
-        let rows_per_partition = (self.total_rows + self.num_partitions - 1) / self.num_partitions;
+        let rows_per_partition = self.total_rows.div_ceil(self.num_partitions);
         let start = partition_id * rows_per_partition;
         let end = (start + rows_per_partition).min(self.total_rows);
         (start, end)
@@ -291,7 +287,7 @@ impl ParallelJoin {
 
     fn broadcast_join(&self, left: Vec<RowBatch>, right: Vec<RowBatch>) -> Result<Vec<RowBatch>> {
         // Broadcast smaller side to all workers
-        let (build_side, probe_side) = if left.len() < right.len() {
+        let (_build_side, _probe_side) = if left.len() < right.len() {
             (left, right)
         } else {
             (right, left)
@@ -303,15 +299,19 @@ impl ParallelJoin {
 
     fn partitioned_hash_join(
         &self,
-        left: Vec<RowBatch>,
-        right: Vec<RowBatch>,
+        _left: Vec<RowBatch>,
+        _right: Vec<RowBatch>,
     ) -> Result<Vec<RowBatch>> {
         // Partition both sides by join key
         // Each partition is processed independently
         Ok(Vec::new())
     }
 
-    fn sort_merge_join(&self, left: Vec<RowBatch>, right: Vec<RowBatch>) -> Result<Vec<RowBatch>> {
+    fn sort_merge_join(
+        &self,
+        _left: Vec<RowBatch>,
+        _right: Vec<RowBatch>,
+    ) -> Result<Vec<RowBatch>> {
         // Sort both sides in parallel, then merge
         Ok(Vec::new())
     }

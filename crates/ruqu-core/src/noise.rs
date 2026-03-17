@@ -294,18 +294,10 @@ pub fn apply_readout_error(outcome: bool, p01: f64, p10: f64, rng: &mut impl Rng
     let r: f64 = rng.gen();
     if outcome {
         // True outcome is |1>; flip to |0> with probability p10.
-        if r < p10 {
-            false
-        } else {
-            true
-        }
+        r >= p10
     } else {
         // True outcome is |0>; flip to |1> with probability p01.
-        if r < p01 {
-            true
-        } else {
-            false
-        }
+        r < p01
     }
 }
 

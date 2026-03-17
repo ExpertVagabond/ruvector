@@ -135,11 +135,7 @@ pub fn analyze_circuit(circuit: &QuantumCircuit) -> CircuitAnalysis {
         // Check connectivity for two-qubit gates.
         let qubits = gate.qubits();
         if qubits.len() == 2 {
-            let dist = if qubits[0] > qubits[1] {
-                qubits[0] - qubits[1]
-            } else {
-                qubits[1] - qubits[0]
-            };
+            let dist = qubits[0].abs_diff(qubits[1]);
             if dist > max_connectivity {
                 max_connectivity = dist;
             }

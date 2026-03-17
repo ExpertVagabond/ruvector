@@ -85,6 +85,7 @@ pub struct Expander {
 
 impl Expander {
     /// Create new expander
+    #[must_use]
     pub fn new(id: u64, vertices: HashSet<VertexId>) -> Self {
         Self {
             id,
@@ -98,16 +99,19 @@ impl Expander {
     }
 
     /// Get size (number of vertices)
+    #[must_use]
     pub fn size(&self) -> usize {
         self.vertices.len()
     }
 
     /// Check if vertex is in this expander
+    #[must_use]
     pub fn contains(&self, v: VertexId) -> bool {
         self.vertices.contains(&v)
     }
 
     /// Compute boundary sparsity
+    #[must_use]
     pub fn boundary_sparsity(&self) -> f64 {
         if self.volume == 0 {
             return 0.0;
@@ -135,6 +139,7 @@ pub struct Precluster {
 
 impl Precluster {
     /// Create new precluster
+    #[must_use]
     pub fn new(id: u64) -> Self {
         Self {
             id,
@@ -154,11 +159,13 @@ impl Precluster {
     }
 
     /// Get size
+    #[must_use]
     pub fn size(&self) -> usize {
         self.vertices.len()
     }
 
     /// Compute boundary ratio
+    #[must_use]
     pub fn boundary_ratio(&self) -> f64 {
         if self.volume == 0 {
             return 0.0;
@@ -178,7 +185,7 @@ pub struct MirrorCut {
     pub cut_value: f64,
     /// Edges in the cut
     pub cut_edges: Vec<(VertexId, VertexId)>,
-    /// Is this cut certified (verified via LocalKCut)?
+    /// Is this cut certified (verified via `LocalKCut`)?
     pub certified: bool,
 }
 
@@ -201,6 +208,7 @@ pub struct HierarchyCluster {
 
 impl HierarchyCluster {
     /// Create new cluster
+    #[must_use]
     pub fn new(id: u64) -> Self {
         Self {
             id,
@@ -219,6 +227,7 @@ impl HierarchyCluster {
     }
 
     /// Get size
+    #[must_use]
     pub fn size(&self) -> usize {
         self.vertices.len()
     }
@@ -247,6 +256,7 @@ pub struct ThreeLevelHierarchy {
 
 impl ThreeLevelHierarchy {
     /// Create new hierarchy
+    #[must_use]
     pub fn new(config: HierarchyConfig) -> Self {
         Self {
             config,
@@ -261,6 +271,7 @@ impl ThreeLevelHierarchy {
     }
 
     /// Create with default config
+    #[must_use]
     pub fn with_defaults() -> Self {
         Self::new(HierarchyConfig::default())
     }
@@ -282,11 +293,13 @@ impl ThreeLevelHierarchy {
     }
 
     /// Get all vertices
+    #[must_use]
     pub fn vertices(&self) -> Vec<VertexId> {
         self.adjacency.keys().copied().collect()
     }
 
     /// Get neighbors
+    #[must_use]
     pub fn neighbors(&self, v: VertexId) -> Vec<(VertexId, Weight)> {
         self.adjacency
             .get(&v)
@@ -295,8 +308,11 @@ impl ThreeLevelHierarchy {
     }
 
     /// Get degree
+    #[must_use]
     pub fn degree(&self, v: VertexId) -> usize {
-        self.adjacency.get(&v).map_or(0, |n| n.len())
+        self.adjacency
+            .get(&v)
+            .map_or(0, std::collections::HashMap::len)
     }
 
     /// Build the complete 3-level hierarchy
@@ -1118,10 +1134,10 @@ impl ThreeLevelHierarchy {
 
     // === Mirror Cut Certification ===
 
-    /// Certify mirror cuts using LocalKCut verification
+    /// Certify mirror cuts using `LocalKCut` verification
     ///
     /// This verifies that the tracked mirror cuts are accurate by
-    /// running LocalKCut queries on the expander boundaries.
+    /// running `LocalKCut` queries on the expander boundaries.
     pub fn certify_mirror_cuts(&mut self) {
         use crate::localkcut::deterministic::DeterministicLocalKCut;
 
@@ -1203,6 +1219,7 @@ impl ThreeLevelHierarchy {
     }
 
     /// Get number of certified mirror cuts
+    #[must_use]
     pub fn num_certified_mirror_cuts(&self) -> usize {
         self.clusters
             .values()
@@ -1212,6 +1229,7 @@ impl ThreeLevelHierarchy {
     }
 
     /// Get number of total mirror cuts
+    #[must_use]
     pub fn num_mirror_cuts(&self) -> usize {
         self.clusters.values().map(|c| c.mirror_cuts.len()).sum()
     }
@@ -1219,6 +1237,7 @@ impl ThreeLevelHierarchy {
     // === Getters ===
 
     /// Get expander containing vertex
+    #[must_use]
     pub fn get_vertex_expander(&self, v: VertexId) -> Option<&Expander> {
         self.vertex_expander
             .get(&v)
@@ -1226,33 +1245,42 @@ impl ThreeLevelHierarchy {
     }
 
     /// Get all expanders
+    #[must_use]
     pub fn get_expanders(&self) -> &HashMap<u64, Expander> {
         &self.expanders
     }
 
     /// Get all preclusters
+    #[must_use]
     pub fn get_preclusters(&self) -> &HashMap<u64, Precluster> {
         &self.preclusters
     }
 
     /// Get all clusters
+    #[must_use]
     pub fn get_clusters(&self) -> &HashMap<u64, HierarchyCluster> {
         &self.clusters
     }
 
     /// Get hierarchy statistics
+    #[must_use]
     pub fn stats(&self) -> HierarchyStats {
         HierarchyStats {
             num_expanders: self.expanders.len(),
             num_preclusters: self.preclusters.len(),
             num_clusters: self.clusters.len(),
             num_vertices: self.adjacency.len(),
-            num_edges: self.adjacency.values().map(|n| n.len()).sum::<usize>() / 2,
+            num_edges: self
+                .adjacency
+                .values()
+                .map(std::collections::HashMap::len)
+                .sum::<usize>()
+                / 2,
             global_min_cut: self.global_min_cut,
             avg_expander_size: if self.expanders.is_empty() {
                 0.0
             } else {
-                self.expanders.values().map(|e| e.size()).sum::<usize>() as f64
+                self.expanders.values().map(Expander::size).sum::<usize>() as f64
                     / self.expanders.len() as f64
             },
         }

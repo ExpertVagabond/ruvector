@@ -15,12 +15,11 @@
 //! - Subpolynomial search exploiting learned graph structure
 
 use super::{
-    network::{LayerConfig, NetworkConfig, SpikingNetwork},
-    neuron::{LIFNeuron, NeuronConfig, NeuronPopulation},
-    synapse::{STDPConfig, Synapse, SynapseMatrix},
+    neuron::{NeuronConfig, NeuronPopulation},
+    synapse::{STDPConfig, SynapseMatrix},
     SimTime, Spike,
 };
-use crate::graph::{DynamicGraph, EdgeId, VertexId, Weight};
+use crate::graph::{DynamicGraph, VertexId, Weight};
 use std::collections::VecDeque;
 
 /// Configuration for neural graph optimizer
@@ -79,6 +78,7 @@ pub enum GraphAction {
 
 impl GraphAction {
     /// Get action index
+    #[must_use]
     pub fn to_index(&self) -> usize {
         match self {
             GraphAction::AddEdge(..) => 0,
@@ -178,6 +178,7 @@ pub struct ValueNetwork {
 
 impl ValueNetwork {
     /// Create a new value network
+    #[must_use]
     pub fn new(input_size: usize, hidden_size: usize) -> Self {
         // Initialize with small random weights (Xavier initialization)
         let scale = (2.0 / (input_size + hidden_size) as f64).sqrt();
@@ -227,6 +228,7 @@ impl ValueNetwork {
     }
 
     /// Get previous estimate
+    #[must_use]
     pub fn estimate_previous(&self) -> f64 {
         self.last_estimate
     }
@@ -236,10 +238,10 @@ impl ValueNetwork {
     /// Implements gradient descent with:
     /// - Forward pass to compute activations
     /// - Backward pass to compute ∂V/∂w
-    /// - Weight update: w += lr * td_error * ∂V/∂w
+    /// - Weight update: w += lr * `td_error` * ∂V/∂w
     pub fn update(&mut self, state: &[f64], td_error: f64, lr: f64) {
         let hidden_size = self.w_hidden.len();
-        let input_size = if self.w_hidden.is_empty() {
+        let _input_size = if self.w_hidden.is_empty() {
             0
         } else {
             self.w_hidden[0].len()
@@ -310,6 +312,7 @@ pub struct PolicySNN {
 
 impl PolicySNN {
     /// Create a new policy SNN
+    #[must_use]
     pub fn new(config: OptimizerConfig) -> Self {
         let input_config = NeuronConfig {
             tau_membrane: 10.0,
@@ -423,6 +426,7 @@ impl PolicySNN {
     }
 
     /// Get regions with low activity (for search skip)
+    #[must_use]
     pub fn low_activity_regions(&self) -> Vec<usize> {
         self.hidden_layer
             .spike_trains
@@ -566,10 +570,10 @@ impl NeuralGraphOptimizer {
 
         match action_idx % 5 {
             0 => {
-                if !self.graph.has_edge(v1, v2) {
-                    GraphAction::AddEdge(v1, v2, 1.0)
-                } else {
+                if self.graph.has_edge(v1, v2) {
                     GraphAction::NoOp
+                } else {
+                    GraphAction::AddEdge(v1, v2, 1.0)
                 }
             }
             1 => {
@@ -638,7 +642,7 @@ impl NeuralGraphOptimizer {
     }
 
     /// Search with learned structure
-    pub fn search(&self, query: &[f64], k: usize) -> Vec<VertexId> {
+    pub fn search(&self, _query: &[f64], k: usize) -> Vec<VertexId> {
         // Use skip regions to guide search
         let skip_regions = self.search_skip_regions();
 
@@ -649,7 +653,7 @@ impl NeuralGraphOptimizer {
             .iter()
             .enumerate()
             .filter(|(i, _)| !skip_regions.contains(i))
-            .map(|(i, &v)| {
+            .map(|(_i, &v)| {
                 // Score based on degree (proxy for centrality)
                 let score = self.graph.degree(v) as f64;
                 (v, score)

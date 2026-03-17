@@ -30,6 +30,7 @@ pub struct CacheOptAdjacency {
 
 impl CacheOptAdjacency {
     /// Create from edge list
+    #[must_use]
     pub fn from_edges(edges: &[(VertexId, VertexId, f64)], max_vertex: VertexId) -> Self {
         let vertex_count = (max_vertex + 1) as usize;
         let mut adj: Vec<Vec<(VertexId, f64)>> = vec![Vec::new(); vertex_count];
@@ -58,6 +59,7 @@ impl CacheOptAdjacency {
 
     /// Get neighbors of a vertex (cache-friendly)
     #[inline]
+    #[must_use]
     pub fn neighbors(&self, v: VertexId) -> &[(VertexId, f64)] {
         let v = v as usize;
         if v >= self.vertex_count {
@@ -84,6 +86,7 @@ impl CacheOptAdjacency {
     }
 
     /// Get vertex count
+    #[must_use]
     pub fn vertex_count(&self) -> usize {
         self.vertex_count
     }
@@ -102,6 +105,7 @@ pub struct CacheOptBFS<'a> {
 
 impl<'a> CacheOptBFS<'a> {
     /// Create new BFS iterator
+    #[must_use]
     pub fn new(adj: &'a CacheOptAdjacency, start: VertexId) -> Self {
         let mut visited = vec![false; adj.vertex_count()];
         let mut queue = VecDeque::with_capacity(adj.vertex_count());
@@ -120,6 +124,7 @@ impl<'a> CacheOptBFS<'a> {
     }
 
     /// Run BFS and return visited vertices
+    #[must_use]
     pub fn run(mut self) -> HashSet<VertexId> {
         let mut result = HashSet::new();
 
@@ -144,6 +149,7 @@ impl<'a> CacheOptBFS<'a> {
     }
 
     /// Check connectivity between two vertices
+    #[must_use]
     pub fn connected_to(mut self, target: VertexId) -> bool {
         if (target as usize) >= self.adj.vertex_count() {
             return false;
@@ -183,11 +189,13 @@ pub struct BatchProcessor {
 
 impl BatchProcessor {
     /// Create with default batch size
+    #[must_use]
     pub fn new() -> Self {
         Self { batch_size: 32 }
     }
 
     /// Create with custom batch size
+    #[must_use]
     pub fn with_batch_size(batch_size: usize) -> Self {
         Self { batch_size }
     }
@@ -203,6 +211,7 @@ impl BatchProcessor {
     }
 
     /// Compute degrees with batch prefetching
+    #[must_use]
     pub fn compute_degrees(
         &self,
         adj: &CacheOptAdjacency,
@@ -240,6 +249,7 @@ pub struct AlignedBuffer<T, const N: usize> {
 
 impl<T: Default + Copy, const N: usize> AlignedBuffer<T, N> {
     /// Create zeroed buffer
+    #[must_use]
     pub fn new() -> Self
     where
         T: Default + Copy,

@@ -254,7 +254,7 @@ impl NumaAllocator {
         // In a real implementation, this would use platform-specific APIs
         // For now, assume 1 node per 8 CPUs
         let cpus = num_cpus::get();
-        ((cpus + 7) / 8).max(1)
+        cpus.div_ceil(8).max(1)
     }
 
     /// Allocate from preferred NUMA node
@@ -348,7 +348,7 @@ impl<T> PooledObject<T> {
 impl<T> Drop for PooledObject<T> {
     fn drop(&mut self) {
         if let Some(object) = self.object.take() {
-            let _ = self.pool.push(object);
+            self.pool.push(object);
         }
     }
 }

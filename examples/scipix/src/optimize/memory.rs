@@ -128,13 +128,9 @@ unsafe impl Sync for MmapModel {}
 impl MmapModel {
     /// Load model from file using memory mapping
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let file = File::open(path.as_ref()).map_err(|e| ScipixError::Io(e))?;
+        let file = File::open(path.as_ref()).map_err(ScipixError::Io)?;
 
-        let mmap = unsafe {
-            MmapOptions::new()
-                .map(&file)
-                .map_err(|e| ScipixError::Io(e))?
-        };
+        let mmap = unsafe { MmapOptions::new().map(&file).map_err(ScipixError::Io)? };
 
         let data = mmap.as_ptr();
         let len = mmap.len();

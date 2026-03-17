@@ -36,7 +36,7 @@ impl AtomicBitmap {
     /// # Arguments
     /// * `size` - Number of bits to allocate
     pub fn new(size: usize) -> Self {
-        let num_words = (size + 63) / 64;
+        let num_words = size.div_ceil(64);
         let bits = (0..num_words).map(|_| AtomicU64::new(0)).collect();
 
         Self { bits, size }
@@ -171,7 +171,7 @@ impl MmapManager {
 
         // Get system page size
         let page_size = page_size::get();
-        let num_pages = (file_size + page_size - 1) / page_size;
+        let num_pages = file_size.div_ceil(page_size);
 
         Ok(Self {
             file,
@@ -437,7 +437,7 @@ impl MmapGradientAccumulator {
 
         // Use a lock granularity of 64 nodes per lock for good parallelism
         let lock_granularity = 64;
-        let num_locks = (max_nodes + lock_granularity - 1) / lock_granularity;
+        let num_locks = max_nodes.div_ceil(lock_granularity);
         let locks = (0..num_locks).map(|_| RwLock::new(())).collect();
 
         Ok(Self {

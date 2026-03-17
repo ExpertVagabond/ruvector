@@ -11,6 +11,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(u8)]
+#[derive(Default)]
 pub enum SecurityPolicy {
     /// No signature verification. For development and testing only.
     Permissive = 0x00,
@@ -18,16 +19,11 @@ pub enum SecurityPolicy {
     WarnOnly = 0x01,
     /// Require valid signature on Level 0 manifest.
     /// DEFAULT for production.
+    #[default]
     Strict = 0x02,
     /// Require valid signatures on Level 0, Level 1, and all
     /// hotset-referenced segments. Full chain verification.
     Paranoid = 0x03,
-}
-
-impl Default for SecurityPolicy {
-    fn default() -> Self {
-        Self::Strict
-    }
 }
 
 impl SecurityPolicy {

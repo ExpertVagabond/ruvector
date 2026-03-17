@@ -261,7 +261,7 @@ impl QuantumStateF32 {
         let amplitudes: Vec<Complex32> = state
             .state_vector()
             .iter()
-            .map(|c| Complex32::from_f64(c))
+            .map(Complex32::from_f64)
             .collect();
         Self {
             num_qubits: state.num_qubits(),

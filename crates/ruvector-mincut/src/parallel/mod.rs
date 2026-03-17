@@ -41,7 +41,7 @@ pub const NUM_CORES: usize = 256;
 /// Number of geometric ranges per core
 pub const RANGES_PER_CORE: usize = 1;
 
-/// Total ranges = NUM_CORES × RANGES_PER_CORE
+/// Total ranges = `NUM_CORES` × `RANGES_PER_CORE`
 pub const TOTAL_RANGES: usize = NUM_CORES * RANGES_PER_CORE;
 
 /// Range factor (1.2 from paper)
@@ -101,7 +101,7 @@ impl WorkItem {
 pub struct SharedCoordinator {
     /// Global minimum cut found so far
     pub global_min_cut: AtomicU16,
-    /// Number of cores that have completed (u16 to support NUM_CORES=256)
+    /// Number of cores that have completed (u16 to support `NUM_CORES=256`)
     pub completed_cores: AtomicU16,
     /// Current phase
     pub phase: AtomicU8,
@@ -115,6 +115,12 @@ pub struct SharedCoordinator {
     _pad: [u8; 52],
 }
 
+impl Default for SharedCoordinator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SharedCoordinator {
     pub const PHASE_INIT: u8 = 0;
     pub const PHASE_DISTRIBUTE: u8 = 1;
@@ -122,6 +128,7 @@ impl SharedCoordinator {
     pub const PHASE_COLLECT: u8 = 3;
     pub const PHASE_DONE: u8 = 4;
 
+    #[must_use]
     pub fn new() -> Self {
         Self {
             global_min_cut: AtomicU16::new(u16::MAX),
@@ -169,8 +176,9 @@ impl SharedCoordinator {
 
 /// Compute range bounds for a core
 #[inline]
+#[must_use]
 pub fn compute_core_range(core_id: u8) -> (u16, u16) {
-    let i = core_id as u32;
+    let i = u32::from(core_id);
     let lambda_min = (RANGE_FACTOR.powi(i as i32)).floor() as u16;
     let lambda_max = (RANGE_FACTOR.powi((i + 1) as i32)).floor() as u16;
     (lambda_min.max(1), lambda_max.max(1))
@@ -184,6 +192,7 @@ pub struct CoreDistributor {
 }
 
 impl CoreDistributor {
+    #[must_use]
     pub fn new(strategy: CoreStrategy, num_vertices: u16, num_edges: u16) -> Self {
         Self {
             strategy,
@@ -194,6 +203,7 @@ impl CoreDistributor {
 
     /// Determine which core should handle a vertex
     #[inline]
+    #[must_use]
     pub fn vertex_to_core(&self, v: CompactVertexId) -> u8 {
         match self.strategy {
             CoreStrategy::GeometricRanges => {
@@ -202,7 +212,7 @@ impl CoreDistributor {
             }
             CoreStrategy::GraphPartition => {
                 // Partition by vertex ID
-                ((v as u32 * NUM_CORES as u32) / self.num_vertices as u32) as u8
+                ((u32::from(v) * NUM_CORES as u32) / u32::from(self.num_vertices)) as u8
             }
             CoreStrategy::WorkStealing => {
                 // Dynamic assignment
@@ -212,13 +222,14 @@ impl CoreDistributor {
     }
 
     /// Get the range of vertices for a core
+    #[must_use]
     pub fn core_vertex_range(&self, core_id: u8) -> (CompactVertexId, CompactVertexId) {
         match self.strategy {
             CoreStrategy::GeometricRanges => (0, self.num_vertices),
             CoreStrategy::GraphPartition => {
-                let n = self.num_vertices as u32;
-                let start = (core_id as u32 * n) / NUM_CORES as u32;
-                let end = ((core_id as u32 + 1) * n) / NUM_CORES as u32;
+                let n = u32::from(self.num_vertices);
+                let start = (u32::from(core_id) * n) / NUM_CORES as u32;
+                let end = ((u32::from(core_id) + 1) * n) / NUM_CORES as u32;
                 (start as u16, end as u16)
             }
             CoreStrategy::WorkStealing => (0, self.num_vertices),
@@ -238,6 +249,7 @@ pub struct CoreExecutor<'a> {
 
 impl<'a> CoreExecutor<'a> {
     /// Initialize core with its assigned range
+    #[must_use]
     pub fn init(core_id: u8, coordinator: Option<&'a SharedCoordinator>) -> Self {
         let (lambda_min, lambda_max) = compute_core_range(core_id);
 
@@ -348,6 +360,7 @@ impl<'a> CoreExecutor<'a> {
     ///
     /// Uses WASM SIMD128 when available for parallel edge checking
     #[inline]
+    #[must_use]
     pub fn compute_boundary_simd(&self, set: &BitSet256) -> u16 {
         // Collect active edges as (source, target) pairs
         let edges: Vec<(CompactVertexId, CompactVertexId)> = self.state.edges
@@ -363,6 +376,7 @@ impl<'a> CoreExecutor<'a> {
 
     /// SIMD-accelerated population count for membership sets
     #[inline]
+    #[must_use]
     pub fn membership_count_simd(&self, set: &BitSet256) -> u32 {
         simd_popcount(&set.bits)
     }
@@ -380,6 +394,7 @@ pub struct ResultAggregator {
 
 impl ResultAggregator {
     /// Create a new result aggregator
+    #[must_use]
     pub fn new() -> Self {
         Self {
             results: [CoreResult::default(); NUM_CORES],
@@ -400,6 +415,7 @@ impl ResultAggregator {
     }
 
     /// Get the best result (lowest minimum cut)
+    #[must_use]
     pub fn best_result(&self) -> &CoreResult {
         &self.results[self.best_idx]
     }

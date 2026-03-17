@@ -134,7 +134,7 @@ impl ClusterHierarchy {
     fn build_level(&mut self, level: usize, child_ids: &[u64]) -> Vec<u64> {
         // Group children into parent clusters
         // Target: reduce number of clusters by factor of 2
-        let _target_count = (child_ids.len() + 1) / 2;
+        let _target_count = child_ids.len().div_ceil(2);
         let mut parent_ids = Vec::new();
 
         for chunk in child_ids.chunks(2) {
@@ -246,6 +246,7 @@ impl ClusterHierarchy {
     }
 
     /// Find the smallest cluster containing both vertices
+    #[must_use]
     pub fn lowest_common_cluster(&self, u: VertexId, v: VertexId) -> Option<u64> {
         let u_cluster = self.vertex_cluster.get(&u)?;
         let v_cluster = self.vertex_cluster.get(&v)?;
@@ -271,6 +272,7 @@ impl ClusterHierarchy {
     }
 
     /// Get minimum boundary size across all clusters
+    #[must_use]
     pub fn min_boundary(&self) -> u64 {
         self.clusters
             .values()
@@ -281,16 +283,19 @@ impl ClusterHierarchy {
     }
 
     /// Get cluster by ID
+    #[must_use]
     pub fn get_cluster(&self, id: u64) -> Option<&Cluster> {
         self.clusters.get(&id)
     }
 
     /// Get number of levels
+    #[must_use]
     pub fn num_levels(&self) -> usize {
         self.num_levels
     }
 
     /// Get root cluster
+    #[must_use]
     pub fn root(&self) -> Option<&Cluster> {
         self.root_id.and_then(|id| self.clusters.get(&id))
     }

@@ -278,7 +278,7 @@ impl QueryOptimizer {
 
     /// Apply predicate pushdown optimization
     /// Move WHERE clauses as close to data access as possible
-    fn apply_predicate_pushdown(&self, query: Query) -> Option<Query> {
+    fn apply_predicate_pushdown(&self, _query: Query) -> Option<Query> {
         // In a real implementation, this would analyze the query graph
         // and push predicates down to the earliest possible point
         // For now, we'll do a simple transformation
@@ -353,7 +353,7 @@ impl QueryOptimizer {
                 selectivity +=
                     self.estimate_pattern_selectivity(&Pattern::Node(*rel.from.clone())) * 0.3;
                 // rel.to is now a Pattern (can be NodePattern or chained RelationshipPattern)
-                selectivity += self.estimate_pattern_selectivity(&*rel.to) * 0.3;
+                selectivity += self.estimate_pattern_selectivity(&rel.to) * 0.3;
 
                 selectivity.min(1.0)
             }
@@ -438,11 +438,11 @@ impl QueryOptimizer {
                 let mut cost = 100.0;
 
                 // Labels reduce cost (more selective)
-                cost /= (1.0 + node.labels.len() as f64 * 0.5);
+                cost /= 1.0 + node.labels.len() as f64 * 0.5;
 
                 // Properties reduce cost
                 if let Some(props) = &node.properties {
-                    cost /= (1.0 + props.len() as f64 * 0.3);
+                    cost /= 1.0 + props.len() as f64 * 0.3;
                 }
 
                 cost

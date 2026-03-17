@@ -1,16 +1,15 @@
-//! Degree-based Presparse (DSpar) Implementation
+//! Degree-based Presparse (`DSpar`) Implementation
 //!
 //! Fast approximation for sparsification using effective resistance:
-//!     R_eff(u,v) ≈ 1 / (deg(u) × deg(v))
+//!     `R_eff(u,v)` ≈ 1 / (deg(u) × deg(v))
 //!
 //! This provides a 5.9x speedup over exact effective resistance computation
 //! while maintaining spectral properties for minimum cut preservation.
 //!
-//! Reference: "Degree-based Sparsification" (OpenReview)
+//! Reference: "Degree-based Sparsification" (`OpenReview`)
 
 use crate::graph::{DynamicGraph, EdgeId, VertexId, Weight};
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
 
 /// Configuration for degree-based presparse
 #[derive(Debug, Clone)]
@@ -69,7 +68,7 @@ pub struct PresparseResult {
 
 /// Degree-based presparse implementation
 ///
-/// Uses effective resistance approximation R_eff(u,v) ≈ 1/(deg_u × deg_v)
+/// Uses effective resistance approximation `R_eff(u,v)` ≈ `1/(deg_u` × `deg_v`)
 /// to pre-filter edges before exact sparsification, achieving 5.9x speedup.
 pub struct DegreePresparse {
     config: PresparseConfig,
@@ -79,11 +78,13 @@ pub struct DegreePresparse {
 
 impl DegreePresparse {
     /// Create new degree presparse with default config
+    #[must_use]
     pub fn new() -> Self {
         Self::with_config(PresparseConfig::default())
     }
 
     /// Create with custom config
+    #[must_use]
     pub fn with_config(config: PresparseConfig) -> Self {
         Self {
             config,
@@ -93,11 +94,12 @@ impl DegreePresparse {
 
     /// Compute effective resistance approximation for an edge
     ///
-    /// R_eff(u,v) ≈ 1 / (deg(u) × deg(v))
+    /// `R_eff(u,v)` ≈ 1 / (deg(u) × deg(v))
     ///
     /// High resistance = edge is important for connectivity
     /// Low resistance = edge can likely be removed
     #[inline]
+    #[must_use]
     pub fn effective_resistance(&self, deg_u: usize, deg_v: usize) -> f64 {
         if deg_u == 0 || deg_v == 0 {
             return f64::INFINITY; // Always keep edges to isolated vertices
@@ -182,7 +184,7 @@ impl DegreePresparse {
         let mut edge_mapping = HashMap::with_capacity(target_count);
         let mut kept_vertices = HashSet::new();
 
-        for (idx, (edge_id, u, v, weight, resistance)) in scored_edges.into_iter().enumerate() {
+        for (edge_id, u, v, weight, resistance) in scored_edges.into_iter() {
             if result_edges.len() >= target_count && resistance < threshold {
                 break;
             }
@@ -264,6 +266,7 @@ impl DegreePresparse {
     }
 
     /// Get statistics for the presparse
+    #[must_use]
     pub fn config(&self) -> &PresparseConfig {
         &self.config
     }
@@ -277,7 +280,7 @@ impl Default for DegreePresparse {
 
 /// Spectral concordance loss for validating sparsification quality
 ///
-/// L = λ₁·Laplacian_Alignment + λ₂·Feature_Preserve + λ₃·Sparsity
+/// L = `λ₁·Laplacian_Alignment` + `λ₂·Feature_Preserve` + λ₃·Sparsity
 pub struct SpectralConcordance {
     /// Weight for Laplacian alignment term
     pub lambda_laplacian: f64,
@@ -331,7 +334,7 @@ impl SpectralConcordance {
         }
 
         if count > 0 {
-            total_diff / count as f64
+            total_diff / f64::from(count)
         } else {
             0.0
         }

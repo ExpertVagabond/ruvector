@@ -10,13 +10,9 @@
 //! ## Application
 //!
 //! Different phases correspond to different graph topologies. Phase transitions
-//! trigger topology changes, and MinCut verification ensures stability within each phase.
+//! trigger topology changes, and `MinCut` verification ensures stability within each phase.
 
-use super::{
-    network::{LayerConfig, NetworkConfig, SpikingNetwork},
-    neuron::{LIFNeuron, NeuronConfig},
-    SimTime, Spike, Vector,
-};
+use super::SimTime;
 use crate::graph::{DynamicGraph, VertexId};
 use std::f64::consts::PI;
 
@@ -67,6 +63,7 @@ pub struct OscillatorNeuron {
 
 impl OscillatorNeuron {
     /// Create a new oscillator
+    #[must_use]
     pub fn new(id: usize, frequency_hz: f64, phase_offset: f64) -> Self {
         let omega = 2.0 * PI * frequency_hz / 1000.0; // Convert to rad/ms
 
@@ -98,6 +95,7 @@ impl OscillatorNeuron {
     }
 
     /// Get current activity
+    #[must_use]
     pub fn activity(&self) -> f64 {
         self.activity
     }
@@ -124,6 +122,7 @@ pub struct PhaseTopology {
 
 impl PhaseTopology {
     /// Create a new phase topology
+    #[must_use]
     pub fn new(phase_id: usize) -> Self {
         Self {
             phase_id,
@@ -279,11 +278,12 @@ impl TimeCrystalCPG {
                     .partial_cmp(&b.activity())
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
-            .map(|(i, _)| i)
-            .unwrap_or(0);
+            .map_or(0, |(i, _)| i);
 
         // 4. Phase transition if winner changed
-        let transition = if winner != self.current_phase {
+        let transition = if winner == self.current_phase {
+            None
+        } else {
             let old_phase = self.current_phase;
             self.transition_topology(old_phase, winner);
             self.current_phase = winner;
@@ -295,8 +295,6 @@ impl TimeCrystalCPG {
             }
 
             Some(winner)
-        } else {
-            None
         };
 
         // 5. Verify time crystal stability via mincut
@@ -314,7 +312,7 @@ impl TimeCrystalCPG {
     }
 
     /// Transition between topologies
-    fn transition_topology(&mut self, from: usize, to: usize) {
+    fn transition_topology(&mut self, _from: usize, to: usize) {
         // Blend topologies during transition
         if let Some(to_topo) = self.phase_topologies.get(to) {
             self.active_graph = to_topo.graph.clone();
@@ -363,7 +361,10 @@ impl TimeCrystalCPG {
 
     /// Get oscillator activities
     pub fn activities(&self) -> Vec<f64> {
-        self.oscillators.iter().map(|o| o.activity()).collect()
+        self.oscillators
+            .iter()
+            .map(OscillatorNeuron::activity)
+            .collect()
     }
 
     /// Get active graph
@@ -449,7 +450,7 @@ impl TimeCrystalCPG {
         self.time = 0.0;
         self.phase_history.clear();
 
-        if let Some(topology) = self.phase_topologies.get(0) {
+        if let Some(topology) = self.phase_topologies.first() {
             self.active_graph = topology.graph.clone();
         }
     }

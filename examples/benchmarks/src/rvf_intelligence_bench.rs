@@ -16,7 +16,6 @@
 //! **RVF-learning mode** — full RVF pipeline with all six amplifiers active.
 
 use crate::intelligence_metrics::{DifficultyStats, EpisodeMetrics, RawMetrics};
-use crate::reasoning_bank::{ReasoningBank, Trajectory, Verdict};
 use crate::temporal::{AdaptiveSolver, SolverResult, TemporalPuzzle, TemporalSolver};
 use crate::timepuzzles::{PuzzleGenerator, PuzzleGeneratorConfig};
 use anyhow::Result;

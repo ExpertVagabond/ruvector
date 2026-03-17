@@ -1,6 +1,6 @@
 //! # Spiking Neural Network Architecture
 //!
-//! Provides layered spiking network architecture for integration with MinCut algorithms.
+//! Provides layered spiking network architecture for integration with `MinCut` algorithms.
 //!
 //! ## Network Types
 //!
@@ -9,9 +9,9 @@
 //! - **Graph-coupled**: Topology mirrors graph structure
 
 use super::{
-    neuron::{LIFNeuron, NeuronConfig, NeuronPopulation, SpikeTrain},
-    synapse::{STDPConfig, Synapse, SynapseMatrix},
-    SimTime, Spike, Vector,
+    neuron::{NeuronConfig, NeuronPopulation},
+    synapse::{STDPConfig, SynapseMatrix},
+    SimTime, Spike,
 };
 use crate::graph::DynamicGraph;
 use rayon::prelude::*;
@@ -30,6 +30,7 @@ pub struct LayerConfig {
 
 impl LayerConfig {
     /// Create a new layer config
+    #[must_use]
     pub fn new(size: usize) -> Self {
         Self {
             size,
@@ -39,12 +40,14 @@ impl LayerConfig {
     }
 
     /// Enable recurrent connections
+    #[must_use]
     pub fn with_recurrence(mut self) -> Self {
         self.recurrent = true;
         self
     }
 
     /// Set custom neuron configuration
+    #[must_use]
     pub fn with_neuron_config(mut self, config: NeuronConfig) -> Self {
         self.neuron_config = config;
         self
@@ -103,6 +106,7 @@ pub struct SpikingNetwork {
 
 impl SpikingNetwork {
     /// Create a new spiking network from configuration
+    #[must_use]
     pub fn new(config: NetworkConfig) -> Self {
         let mut layers = Vec::new();
         let mut feedforward_weights = Vec::new();
@@ -212,16 +216,21 @@ impl SpikingNetwork {
     }
 
     /// Get number of layers
+    #[must_use]
     pub fn num_layers(&self) -> usize {
         self.layers.len()
     }
 
     /// Get layer size
+    #[must_use]
     pub fn layer_size(&self, layer: usize) -> usize {
-        self.layers.get(layer).map(|l| l.size()).unwrap_or(0)
+        self.layers
+            .get(layer)
+            .map_or(0, super::neuron::NeuronPopulation::size)
     }
 
     /// Get current simulation time
+    #[must_use]
     pub fn current_time(&self) -> SimTime {
         self.time
     }
@@ -288,7 +297,7 @@ impl SpikingNetwork {
                 let max_v = self.layers[layer_idx]
                     .neurons
                     .iter()
-                    .map(|n| n.membrane_potential())
+                    .map(super::neuron::LIFNeuron::membrane_potential)
                     .fold(f64::NEG_INFINITY, f64::max);
 
                 for (i, neuron) in self.layers[layer_idx].neurons.iter().enumerate() {
@@ -303,10 +312,10 @@ impl SpikingNetwork {
             all_spikes.push(spikes.clone());
 
             // Update global inhibition
-            if !spikes.is_empty() {
-                self.global_inhibition = (self.global_inhibition + 0.1).min(1.0);
-            } else {
+            if spikes.is_empty() {
                 self.global_inhibition *= 0.95;
+            } else {
+                self.global_inhibition = (self.global_inhibition + 0.1).min(1.0);
             }
 
             // STDP updates for feedforward weights
@@ -340,14 +349,15 @@ impl SpikingNetwork {
     }
 
     /// Get population firing rate for a layer
+    #[must_use]
     pub fn layer_rate(&self, layer: usize, window: f64) -> f64 {
         self.layers
             .get(layer)
-            .map(|l| l.population_rate(window))
-            .unwrap_or(0.0)
+            .map_or(0.0, |l| l.population_rate(window))
     }
 
     /// Get global synchrony
+    #[must_use]
     pub fn global_synchrony(&self) -> f64 {
         let mut total_sync = 0.0;
         let mut count = 0;
@@ -358,13 +368,14 @@ impl SpikingNetwork {
         }
 
         if count > 0 {
-            total_sync / count as f64
+            total_sync / f64::from(count)
         } else {
             0.0
         }
     }
 
     /// Get synchrony matrix (pairwise correlation)
+    #[must_use]
     pub fn synchrony_matrix(&self) -> Vec<Vec<f64>> {
         // Single layer synchrony for simplicity
         let layer = &self.layers[0];
@@ -386,10 +397,16 @@ impl SpikingNetwork {
     }
 
     /// Get output layer activities
+    #[must_use]
     pub fn get_output(&self) -> Vec<f64> {
         self.layers
             .last()
-            .map(|l| l.neurons.iter().map(|n| n.membrane_potential()).collect())
+            .map(|l| {
+                l.neurons
+                    .iter()
+                    .map(super::neuron::LIFNeuron::membrane_potential)
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
@@ -398,14 +415,13 @@ impl SpikingNetwork {
         for weights in &mut self.feedforward_weights {
             weights.apply_reward(reward);
         }
-        for weights in &mut self.recurrent_weights {
-            if let Some(w) = weights {
-                w.apply_reward(reward);
-            }
+        for w in self.recurrent_weights.iter_mut().flatten() {
+            w.apply_reward(reward);
         }
     }
 
     /// Get low-activity regions (for search skip optimization)
+    #[must_use]
     pub fn low_activity_regions(&self) -> Vec<usize> {
         let mut low_activity = Vec::new();
         let threshold = 0.001;
@@ -423,7 +439,7 @@ impl SpikingNetwork {
 
     /// Sync first layer weights back to graph
     pub fn sync_to_graph(&self, graph: &mut DynamicGraph) {
-        if let Some(ref recurrent) = self.recurrent_weights.first().and_then(|r| r.as_ref()) {
+        if let Some(recurrent) = self.recurrent_weights.first().and_then(|r| r.as_ref()) {
             let vertices: Vec<_> = graph.vertices();
 
             for ((pre, post), synapse) in recurrent.iter() {

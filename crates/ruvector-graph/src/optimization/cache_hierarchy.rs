@@ -4,7 +4,6 @@
 //! cache misses and maximize memory bandwidth utilization.
 
 use parking_lot::RwLock;
-use std::alloc::{alloc, dealloc, Layout};
 use std::sync::Arc;
 
 /// Cache line size (64 bytes on x86-64)
@@ -125,7 +124,7 @@ impl CacheHierarchy {
     /// Prefetch nodes that are likely to be accessed soon
     pub fn prefetch_neighbors(&self, node_ids: &[u64]) {
         // Use software prefetching hints
-        for &node_id in node_ids {
+        for &_node_id in node_ids {
             #[cfg(target_arch = "x86_64")]
             unsafe {
                 // Prefetch to L1 cache

@@ -88,7 +88,7 @@ impl MixedCurvatureAttention {
     }
 
     fn aggregate_euclidean(&self, weights: &[f32], values: &[&[f32]]) -> Vec<f32> {
-        let dim = values.get(0).map(|v| v.len()).unwrap_or(0);
+        let dim = values.first().map(|v| v.len()).unwrap_or(0);
         let mut result = vec![0.0; dim];
 
         for (weight, value) in weights.iter().zip(values.iter()) {

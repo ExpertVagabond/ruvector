@@ -1,4 +1,4 @@
-//! # RuVector MinCut
+//! # `RuVector` `MinCut`
 //!
 //! Subpolynomial-time dynamic minimum cut algorithm with real-time monitoring.
 //!
@@ -52,7 +52,7 @@
 //! - `exact` - Exact minimum cut algorithm (enabled by default)
 //! - `approximate` - (1+ε)-approximate algorithm (enabled by default)
 //! - `monitoring` - Real-time monitoring with callbacks (optional)
-//! - `integration` - GraphDB integration (optional)
+//! - `integration` - `GraphDB` integration (optional)
 //! - `simd` - SIMD optimizations (optional)
 //!
 //! ## Examples

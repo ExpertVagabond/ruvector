@@ -26,7 +26,7 @@ impl BloomFilter {
         let num_bits = Self::optimal_num_bits(expected_items, false_positive_rate);
         let num_hashes = Self::optimal_num_hashes(expected_items, num_bits);
 
-        let num_u64s = (num_bits + 63) / 64;
+        let num_u64s = num_bits.div_ceil(64);
 
         Self {
             bits: vec![0; num_u64s],

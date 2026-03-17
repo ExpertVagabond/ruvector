@@ -35,7 +35,6 @@
 //! ```
 
 use crate::acceptance_test::{run_acceptance_test_mode, AblationMode, HoldoutConfig};
-use crate::temporal::PolicyKernel;
 use rvf_crypto::shake256_256;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -231,6 +230,12 @@ pub struct WitnessChainBuilder {
     rvf_entries: Vec<rvf_crypto::WitnessEntry>,
     prev_hash: [u8; 32],
     seq: usize,
+}
+
+impl Default for WitnessChainBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl WitnessChainBuilder {

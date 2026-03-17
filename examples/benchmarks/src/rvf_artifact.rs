@@ -16,10 +16,9 @@
 //! - **Verify**: Regenerates tasks from seeds, reruns grader, must match grades exactly
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use crate::agi_contract::ContractHealth;
-use crate::reasoning_bank::{MemoryClass, RollbackWitness};
+use crate::reasoning_bank::RollbackWitness;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Manifest
@@ -224,6 +223,12 @@ pub struct RvfArtifactBuilder {
     rollback_witnesses: Vec<RollbackWitness>,
     final_health: Option<ContractHealth>,
     final_iq: f64,
+}
+
+impl Default for RvfArtifactBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RvfArtifactBuilder {

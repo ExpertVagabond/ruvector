@@ -135,7 +135,7 @@ fn fmt_angle(angle: f64) -> String {
         return "0".to_string();
     }
 
-    if abs >= 1e-4 && abs < 1e6 {
+    if (1e-4..1e6).contains(&abs) {
         // Fixed notation with enough precision
         let s = format!("{:.15}", angle);
         // Trim trailing zeros after the decimal point

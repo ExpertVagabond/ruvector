@@ -472,7 +472,7 @@ impl ReasoningBank {
         self.trajectories.push(trajectory);
 
         // Recalibrate periodically
-        if self.trajectories.len() % 50 == 0 {
+        if self.trajectories.len().is_multiple_of(50) {
             self.calibration.recalibrate();
         }
     }

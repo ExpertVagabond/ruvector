@@ -11,7 +11,7 @@
 //! # Performance Optimizations
 //!
 //! This implementation includes several optimizations:
-//! - Path compression in find_root for O(log n) amortized complexity
+//! - Path compression in `find_root` for O(log n) amortized complexity
 //! - Optimized zig-zig and zig-zag splay patterns for better cache locality
 //! - Lazy aggregation for efficient path queries
 //! - Inline hints for hot path functions
@@ -84,9 +84,9 @@ impl SplayNode {
 pub struct LinkCutTree {
     /// Node storage (arena allocation)
     nodes: Vec<SplayNode>,
-    /// Map from external NodeId to internal index
+    /// Map from external `NodeId` to internal index
     id_to_index: HashMap<NodeId, usize>,
-    /// Map from internal index to external NodeId
+    /// Map from internal index to external `NodeId`
     index_to_id: Vec<NodeId>,
     /// Cached root nodes for frequently accessed paths (LRU-style)
     /// Maps node index to its cached root
@@ -96,6 +96,7 @@ pub struct LinkCutTree {
 impl LinkCutTree {
     /// Create a new empty Link-Cut Tree
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self {
             nodes: Vec::new(),
@@ -110,6 +111,7 @@ impl LinkCutTree {
     /// # Performance
     /// Pre-allocates memory to avoid reallocation during tree construction
     #[inline]
+    #[must_use]
     pub fn with_capacity(n: usize) -> Self {
         Self {
             nodes: Vec::with_capacity(n),
@@ -129,7 +131,7 @@ impl LinkCutTree {
         index
     }
 
-    /// Get internal index from NodeId
+    /// Get internal index from `NodeId`
     ///
     /// # Performance
     /// Marked as cold since this error path is unlikely in correct usage
@@ -325,12 +327,14 @@ impl LinkCutTree {
 
     /// Get the number of nodes
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.nodes.len()
     }
 
     /// Check if empty
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.nodes.is_empty()
     }

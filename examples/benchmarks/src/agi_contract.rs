@@ -302,16 +302,9 @@ impl Default for AutonomyGates {
 }
 
 /// Evaluator that determines current autonomy level from contract history.
+#[derive(Default)]
 pub struct AutonomyEvaluator {
     pub gates: AutonomyGates,
-}
-
-impl Default for AutonomyEvaluator {
-    fn default() -> Self {
-        Self {
-            gates: AutonomyGates::default(),
-        }
-    }
 }
 
 impl AutonomyEvaluator {

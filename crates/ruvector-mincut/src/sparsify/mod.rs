@@ -72,12 +72,14 @@ impl SparsifyConfig {
     }
 
     /// Set random seed
+    #[must_use]
     pub fn with_seed(mut self, seed: u64) -> Self {
         self.seed = Some(seed);
         self
     }
 
     /// Set maximum number of edges
+    #[must_use]
     pub fn with_max_edges(mut self, max_edges: usize) -> Self {
         self.max_edges = Some(max_edges);
         self

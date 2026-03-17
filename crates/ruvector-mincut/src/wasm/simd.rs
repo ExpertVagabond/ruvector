@@ -48,6 +48,7 @@ pub fn simd_popcount(bits: &[u64; 4]) -> u32 {
 /// Fallback popcount for non-WASM targets
 #[cfg(not(target_arch = "wasm32"))]
 #[inline]
+#[must_use]
 pub fn simd_popcount(bits: &[u64; 4]) -> u32 {
     bits.iter().map(|b| b.count_ones()).sum()
 }
@@ -77,6 +78,7 @@ pub fn simd_xor(a: &BitSet256, b: &BitSet256) -> BitSet256 {
 /// Compute XOR of two bitsets (fallback for non-WASM targets)
 #[cfg(not(target_arch = "wasm32"))]
 #[inline]
+#[must_use]
 pub fn simd_xor(a: &BitSet256, b: &BitSet256) -> BitSet256 {
     a.xor(b)
 }
@@ -84,6 +86,7 @@ pub fn simd_xor(a: &BitSet256, b: &BitSet256) -> BitSet256 {
 /// SIMD-accelerated boundary computation
 /// Counts edges crossing between two vertex sets
 #[inline]
+#[must_use]
 pub fn simd_boundary_size(set_a: &BitSet256, edges: &[(CompactVertexId, CompactVertexId)]) -> u16 {
     let mut count = 0u16;
 
@@ -118,6 +121,7 @@ pub fn simd_batch_contains(set: &BitSet256, vertices: &[CompactVertexId; 8]) -> 
 /// Returns a bitmask where bit i is set if vertices[i] is in set
 #[cfg(not(target_arch = "wasm32"))]
 #[inline]
+#[must_use]
 pub fn simd_batch_contains(set: &BitSet256, vertices: &[CompactVertexId; 8]) -> u8 {
     let mut result = 0u8;
     for (i, &v) in vertices.iter().enumerate() {

@@ -91,7 +91,7 @@ fn detect_lines_hough(edges: &GrayImage, width: u32, height: u32) -> Result<BTre
 
     // Find peaks in accumulator
     let mut angle_votes: BTreeMap<i32, f32> = BTreeMap::new();
-    let threshold = (width.min(height) / 10) as u32; // Adaptive threshold
+    let threshold = (width.min(height) / 10); // Adaptive threshold
 
     for theta_idx in 0..num_angles {
         for rho_idx in 0..max_rho {

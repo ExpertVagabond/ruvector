@@ -324,7 +324,7 @@ impl SurfaceCodeDecoder for HierarchicalTiledDecoder {
 
         // Level 0: decode each base tile independently.
         let ts = self.tile_size.min(grid_w);
-        let tiles_x = (grid_w + ts - 1) / ts;
+        let tiles_x = grid_w.div_ceil(ts);
         let tiles_y = tiles_x;
         let mut corrections: Vec<(u32, PauliType)> = Vec::new();
 
@@ -439,7 +439,7 @@ impl RenormalizationDecoder {
         }
 
         let grid_w = code_distance.saturating_sub(1).max(1);
-        let nb = (grid_w + block_size - 1) / block_size;
+        let nb = grid_w.div_ceil(block_size);
         let mut corrections = Vec::new();
         let mut residual = Vec::new();
 
@@ -810,7 +810,7 @@ impl DefectGraphBuilder {
         }
 
         let mut edges = Vec::new();
-        let search_radius = (max_radius + cs - 1) / cs;
+        let search_radius = max_radius.div_ceil(cs);
 
         for (i, di) in defects.iter().enumerate() {
             let cx = di.x / cs;

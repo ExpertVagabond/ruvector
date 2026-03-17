@@ -59,7 +59,7 @@ pub type NodeId = u64;
 /// Fast RNG state for xorshift64*
 ///
 /// # Performance
-/// xorshift64* is ~2-3x faster than StdRng for priority generation
+/// xorshift64* is ~2-3x faster than `StdRng` for priority generation
 /// while maintaining sufficient randomness for treap balancing
 #[derive(Debug, Clone)]
 struct XorShift64 {
@@ -153,6 +153,7 @@ pub struct EulerTourTree {
 impl EulerTourTree {
     /// Create a new empty Euler Tour Tree
     #[inline]
+    #[must_use]
     pub fn new() -> Self {
         Self::with_seed(42)
     }
@@ -162,6 +163,7 @@ impl EulerTourTree {
     /// # Performance
     /// Pre-allocates with reasonable default capacity
     #[inline]
+    #[must_use]
     pub fn with_seed(seed: u64) -> Self {
         Self::with_seed_and_capacity(seed, 16)
     }
@@ -170,6 +172,7 @@ impl EulerTourTree {
     ///
     /// # Performance
     /// Pre-allocates memory to avoid reallocation
+    #[must_use]
     pub fn with_seed_and_capacity(seed: u64, capacity: usize) -> Self {
         Self {
             nodes: Vec::with_capacity(capacity),
@@ -203,7 +206,7 @@ impl EulerTourTree {
     #[cold]
     #[inline(never)]
     fn vertex_exists_error(&self, v: NodeId) -> MinCutError {
-        MinCutError::InternalError(format!("Vertex {} already exists in a tree", v))
+        MinCutError::InternalError(format!("Vertex {v} already exists in a tree"))
     }
 
     /// Link: Make v a child of u (v must be in separate tree)
@@ -212,11 +215,11 @@ impl EulerTourTree {
         let u_idx = *self
             .first_occurrence
             .get(&u)
-            .ok_or_else(|| MinCutError::InvalidVertex(u))?;
+            .ok_or(MinCutError::InvalidVertex(u))?;
         let v_root = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
 
         // Check they're in different trees
         if self.connected(u, v) {
@@ -263,7 +266,7 @@ impl EulerTourTree {
             .edge_to_node
             .remove(&(u, v))
             .or_else(|| self.edge_to_node.remove(&(v, u)))
-            .ok_or_else(|| MinCutError::EdgeNotFound(u, v))?;
+            .ok_or(MinCutError::EdgeNotFound(u, v))?;
 
         // Reroot to make u the root
         self.reroot_internal(u)?;
@@ -335,6 +338,7 @@ impl EulerTourTree {
 
     /// Check if two vertices are in the same tree
     #[inline]
+    #[must_use]
     pub fn connected(&self, u: NodeId, v: NodeId) -> bool {
         match (self.first_occurrence.get(&u), self.first_occurrence.get(&v)) {
             (Some(&u_idx), Some(&v_idx)) => {
@@ -352,7 +356,7 @@ impl EulerTourTree {
         let v_idx = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
         let root_idx = self.find_root_idx(v_idx)?;
         Ok(self.nodes[root_idx].vertex)
     }
@@ -363,7 +367,7 @@ impl EulerTourTree {
         let v_idx = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
         let root_idx = self.find_root_idx(v_idx)?;
 
         // Count unique vertices in the tour by collecting them
@@ -377,11 +381,11 @@ impl EulerTourTree {
         let first_idx = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
         let last_idx = *self
             .last_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
 
         if first_idx == last_idx {
             return Ok(1); // Singleton or leaf
@@ -392,7 +396,7 @@ impl EulerTourTree {
         let pos2 = self.get_position(last_idx);
         let range_size = pos2.saturating_sub(pos1) + 1;
 
-        Ok((range_size + 1) / 2)
+        Ok(range_size.div_ceil(2))
     }
 
     /// Aggregate over the subtree rooted at v
@@ -401,7 +405,7 @@ impl EulerTourTree {
         let first_idx = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
 
         // For simplicity, return the aggregate of the first occurrence's subtree
         Ok(self.nodes[first_idx].subtree_aggregate)
@@ -413,7 +417,7 @@ impl EulerTourTree {
         let first_idx = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
 
         self.nodes[first_idx].value = value;
         self.pull_up(first_idx);
@@ -428,23 +432,25 @@ impl EulerTourTree {
 
     /// Get the number of vertices
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.first_occurrence.len()
     }
 
     /// Check if empty
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.first_occurrence.is_empty()
     }
 
     // ===== Bulk Operations (Performance Optimization) =====
 
-    /// Bulk create trees - more efficient than individual make_tree calls
+    /// Bulk create trees - more efficient than individual `make_tree` calls
     ///
     /// # Performance
     /// - Pre-allocates all memory upfront
-    /// - Batches HashMap insertions
+    /// - Batches `HashMap` insertions
     /// - Reduces allocation overhead by ~40%
     pub fn bulk_make_trees(&mut self, vertices: &[NodeId]) -> Result<()> {
         // Reserve capacity upfront
@@ -474,7 +480,7 @@ impl EulerTourTree {
     ///
     /// # Performance
     /// - Uses lazy propagation to defer actual updates
-    /// - Batches pull_up operations
+    /// - Batches `pull_up` operations
     /// - ~3x faster than individual updates for large batches
     pub fn bulk_update_values(&mut self, updates: &[(NodeId, f64)]) -> Result<()> {
         // First pass: set lazy values
@@ -484,7 +490,7 @@ impl EulerTourTree {
             let idx = *self
                 .first_occurrence
                 .get(&v)
-                .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+                .ok_or(MinCutError::InvalidVertex(v))?;
 
             self.nodes[idx].lazy_value = Some(value);
             affected_indices.push(idx);
@@ -509,10 +515,10 @@ impl EulerTourTree {
         for &(u, v) in edges {
             self.first_occurrence
                 .get(&u)
-                .ok_or_else(|| MinCutError::InvalidVertex(u))?;
+                .ok_or(MinCutError::InvalidVertex(u))?;
             self.first_occurrence
                 .get(&v)
-                .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+                .ok_or(MinCutError::InvalidVertex(v))?;
         }
 
         // Perform all links
@@ -551,7 +557,7 @@ impl EulerTourTree {
         let v_first = *self
             .first_occurrence
             .get(&v)
-            .ok_or_else(|| MinCutError::InvalidVertex(v))?;
+            .ok_or(MinCutError::InvalidVertex(v))?;
 
         // Get current root
         let root = self.find_root_idx(v_first)?;
@@ -622,13 +628,12 @@ impl EulerTourTree {
     /// Find the matching exit node for an enter node
     ///
     /// # Performance
-    /// O(1) lookup via the enter_to_exit HashMap
+    /// O(1) lookup via the `enter_to_exit` `HashMap`
     #[inline]
     fn find_matching_exit(&self, enter_idx: usize) -> Result<usize> {
         self.enter_to_exit.get(&enter_idx).copied().ok_or_else(|| {
             MinCutError::InternalError(format!(
-                "No matching exit node found for enter index {}",
-                enter_idx
+                "No matching exit node found for enter index {enter_idx}"
             ))
         })
     }
@@ -649,10 +654,7 @@ impl EulerTourTree {
         // Push down lazy values before split
         self.push_down_lazy(root);
 
-        let left_size = self.nodes[root]
-            .left
-            .map(|l| self.nodes[l].size)
-            .unwrap_or(0);
+        let left_size = self.nodes[root].left.map_or(0, |l| self.nodes[l].size);
 
         if pos <= left_size {
             // Split in left subtree
@@ -844,10 +846,7 @@ impl EulerTourTree {
     /// Optimized walk-up with minimal overhead
     #[inline]
     fn get_position(&self, idx: usize) -> usize {
-        let mut pos = self.nodes[idx]
-            .left
-            .map(|l| self.nodes[l].size)
-            .unwrap_or(0);
+        let mut pos = self.nodes[idx].left.map_or(0, |l| self.nodes[l].size);
         let mut current = idx;
 
         while let Some(parent) = self.nodes[current].parent {

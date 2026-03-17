@@ -100,6 +100,7 @@ impl From<&str> for MinCutError {
 // Additional utility methods for MinCutError
 impl MinCutError {
     /// Check if the error is recoverable
+    #[must_use]
     pub fn is_recoverable(&self) -> bool {
         matches!(
             self,
@@ -112,6 +113,7 @@ impl MinCutError {
     }
 
     /// Check if the error indicates a graph structure problem
+    #[must_use]
     pub fn is_graph_structure_error(&self) -> bool {
         matches!(
             self,
@@ -123,6 +125,7 @@ impl MinCutError {
     }
 
     /// Check if the error is related to capacity or resource limits
+    #[must_use]
     pub fn is_resource_error(&self) -> bool {
         matches!(
             self,

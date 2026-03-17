@@ -36,6 +36,7 @@ pub struct Edge {
 
 impl Edge {
     /// Create a new edge
+    #[must_use]
     pub fn new(id: EdgeId, source: VertexId, target: VertexId, weight: Weight) -> Self {
         Self {
             id,
@@ -46,6 +47,7 @@ impl Edge {
     }
 
     /// Get the canonical (ordered) endpoints
+    #[must_use]
     pub fn canonical_endpoints(&self) -> (VertexId, VertexId) {
         if self.source <= self.target {
             (self.source, self.target)
@@ -55,6 +57,7 @@ impl Edge {
     }
 
     /// Get the other endpoint of the edge given one endpoint
+    #[must_use]
     pub fn other(&self, v: VertexId) -> Option<VertexId> {
         if self.source == v {
             Some(self.target)
@@ -85,11 +88,11 @@ pub struct GraphStats {
 
 /// Dynamic graph structure for minimum cut algorithm
 pub struct DynamicGraph {
-    /// Adjacency list: vertex -> set of (neighbor, edge_id)
+    /// Adjacency list: vertex -> set of (neighbor, `edge_id`)
     adjacency: DashMap<VertexId, HashSet<(VertexId, EdgeId)>>,
-    /// Edge storage: edge_id -> Edge
+    /// Edge storage: `edge_id` -> Edge
     edges: DashMap<EdgeId, Edge>,
-    /// Edge lookup: (min(u,v), max(u,v)) -> edge_id
+    /// Edge lookup: (min(u,v), max(u,v)) -> `edge_id`
     edge_index: DashMap<(VertexId, VertexId), EdgeId>,
     /// Next edge ID
     next_edge_id: AtomicU64,
@@ -99,6 +102,7 @@ pub struct DynamicGraph {
 
 impl DynamicGraph {
     /// Create a new empty graph
+    #[must_use]
     pub fn new() -> Self {
         Self {
             adjacency: DashMap::new(),
@@ -110,6 +114,7 @@ impl DynamicGraph {
     }
 
     /// Create with capacity hint
+    #[must_use]
     pub fn with_capacity(vertices: usize, edges: usize) -> Self {
         Self {
             adjacency: DashMap::with_capacity(vertices),
@@ -190,14 +195,14 @@ impl DynamicGraph {
         let edge_id = self
             .edge_index
             .remove(&key)
-            .ok_or_else(|| MinCutError::EdgeNotFound(u, v))?
+            .ok_or(MinCutError::EdgeNotFound(u, v))?
             .1;
 
         // Remove from edge storage
         let (_, edge) = self
             .edges
             .remove(&edge_id)
-            .ok_or_else(|| MinCutError::EdgeNotFound(u, v))?;
+            .ok_or(MinCutError::EdgeNotFound(u, v))?;
 
         // Update adjacency lists
         if let Some(mut neighbors) = self.adjacency.get_mut(&u) {
@@ -236,8 +241,7 @@ impl DynamicGraph {
     pub fn degree(&self, v: VertexId) -> usize {
         self.adjacency
             .get(&v)
-            .map(|neighbors| neighbors.len())
-            .unwrap_or(0)
+            .map_or(0, |neighbors| neighbors.len())
     }
 
     /// Get number of vertices
@@ -336,7 +340,7 @@ impl DynamicGraph {
         let mut visited = HashSet::new();
         let mut components = Vec::new();
 
-        for entry in self.adjacency.iter() {
+        for entry in &self.adjacency {
             let start = *entry.key();
 
             if visited.contains(&start) {
@@ -410,7 +414,7 @@ impl DynamicGraph {
         let edge_id = self
             .edge_index
             .get(&key)
-            .ok_or_else(|| MinCutError::EdgeNotFound(u, v))?;
+            .ok_or(MinCutError::EdgeNotFound(u, v))?;
 
         let edge_id = *edge_id.value();
 
@@ -434,12 +438,12 @@ impl Clone for DynamicGraph {
         let new_graph = Self::with_capacity(self.num_vertices(), self.num_edges());
 
         // Clone vertices
-        for entry in self.adjacency.iter() {
+        for entry in &self.adjacency {
             new_graph.add_vertex(*entry.key());
         }
 
         // Clone edges
-        for entry in self.edges.iter() {
+        for entry in &self.edges {
             let edge = entry.value();
             let _ = new_graph.insert_edge(edge.source, edge.target, edge.weight);
         }

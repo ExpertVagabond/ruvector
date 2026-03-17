@@ -187,7 +187,7 @@ impl CacheManager {
 
         // First try exact hash match
         if let Some(entry) = entries.get(&hash) {
-            if !self.is_expired(&entry) {
+            if !self.is_expired(entry) {
                 self.record_hit();
                 self.update_lru(&hash);
                 return Ok(Some(entry.result.clone()));
@@ -204,10 +204,10 @@ impl CacheManager {
 
             let similarity = self.cosine_similarity(&embedding, &entry.embedding);
 
-            if similarity >= self.config.similarity_threshold {
-                if best_match.is_none() || similarity > best_match.as_ref().unwrap().1 {
-                    best_match = Some((key.clone(), similarity, entry.result.clone()));
-                }
+            if similarity >= self.config.similarity_threshold
+                && (best_match.is_none() || similarity > best_match.as_ref().unwrap().1)
+            {
+                best_match = Some((key.clone(), similarity, entry.result.clone()));
             }
         }
 

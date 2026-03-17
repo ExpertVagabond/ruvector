@@ -213,7 +213,7 @@ impl MixedCurvatureFusedAttention {
                 let k = keys[i];
 
                 // Euclidean similarity (dot product)
-                let sim_e = Self::dot_product_simd(&q_e, &k[e_range.clone()]);
+                let sim_e = Self::dot_product_simd(q_e, &k[e_range.clone()]);
 
                 // Hyperbolic similarity (tangent space dot product)
                 let sim_h = Self::dot_product_simd(&q_h_tangent, &cache.keys_hyperbolic_tangent[i]);

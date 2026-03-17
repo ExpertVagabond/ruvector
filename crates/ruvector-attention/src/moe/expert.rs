@@ -164,7 +164,7 @@ impl LinearExpert {
         let mut features = Vec::with_capacity(num_features * dim);
         let mut seed = 123u64;
 
-        for _ in 0..((num_features * dim + 1) / 2) {
+        for _ in 0..(num_features * dim).div_ceil(2) {
             seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
             let u1 = (seed as f32) / (u64::MAX as f32);
             seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
@@ -210,7 +210,7 @@ impl Expert for LinearExpert {
         values: &[&[f32]],
     ) -> AttentionResult<Vec<f32>> {
         let phi_q = self.feature_map(query);
-        let value_dim = values.get(0).map(|v| v.len()).unwrap_or(self.dim);
+        let value_dim = values.first().map(|v| v.len()).unwrap_or(self.dim);
 
         let mut kv_sum = vec![0.0f32; self.num_features * value_dim];
         let mut k_sum = vec![0.0f32; self.num_features];

@@ -21,12 +21,10 @@
 //! - Maturity detected via mincut stability
 
 use super::{
-    network::{LayerConfig, NetworkConfig, SpikingNetwork},
-    neuron::{LIFNeuron, NeuronConfig, NeuronPopulation},
-    SimTime, Spike,
+    neuron::{LIFNeuron, NeuronConfig},
+    SimTime,
 };
 use crate::graph::{DynamicGraph, VertexId};
-use std::collections::HashMap;
 
 /// Configuration for morphogenetic development
 #[derive(Debug, Clone)]
@@ -118,16 +116,19 @@ pub struct GridPosition {
 
 impl GridPosition {
     /// Create a new grid position
+    #[must_use]
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }
     }
 
     /// Convert to linear index
+    #[must_use]
     pub fn to_index(&self, grid_size: usize) -> usize {
         self.y * grid_size + self.x
     }
 
     /// Create from linear index
+    #[must_use]
     pub fn from_index(idx: usize, grid_size: usize) -> Self {
         Self {
             x: idx % grid_size,
@@ -136,6 +137,7 @@ impl GridPosition {
     }
 
     /// Euclidean distance to another position
+    #[must_use]
     pub fn distance(&self, other: &GridPosition) -> f64 {
         let dx = self.x as f64 - other.x as f64;
         let dy = self.y as f64 - other.y as f64;
@@ -156,6 +158,7 @@ pub struct DiffusionKernel {
 
 impl DiffusionKernel {
     /// Create a new diffusion kernel
+    #[must_use]
     pub fn new(sigma: f64) -> Self {
         Self {
             sigma,
@@ -165,6 +168,7 @@ impl DiffusionKernel {
     }
 
     /// Compute kernel weight between two positions
+    #[must_use]
     pub fn weight(&self, pos1: &GridPosition, pos2: &GridPosition) -> (f64, f64) {
         let d = pos1.distance(pos2);
 
@@ -189,6 +193,7 @@ pub struct MorphNeuronPair {
 
 impl MorphNeuronPair {
     /// Create a new neuron pair at position
+    #[must_use]
     pub fn new(id: usize, position: GridPosition) -> Self {
         let e_config = NeuronConfig {
             tau_membrane: 15.0,
@@ -210,6 +215,7 @@ impl MorphNeuronPair {
     }
 
     /// Get net activation (excitation - inhibition)
+    #[must_use]
     pub fn net_activation(&self) -> f64 {
         self.excitatory.membrane_potential() - self.inhibitory.membrane_potential()
     }
@@ -244,7 +250,8 @@ impl MorphogeneticSNN {
     /// Create a new morphogenetic SNN
     ///
     /// # Panics
-    /// Panics if grid_size exceeds MAX_GRID_SIZE (256) to prevent memory exhaustion.
+    /// Panics if `grid_size` exceeds `MAX_GRID_SIZE` (256) to prevent memory exhaustion.
+    #[must_use]
     pub fn new(config: MorphConfig) -> Self {
         // Resource limit: prevent grid_size² memory explosion
         let grid_size = config.grid_size.min(MAX_GRID_SIZE);
@@ -430,7 +437,7 @@ impl MorphogeneticSNN {
     }
 
     /// Check if development is mature
-    fn check_maturity(&self, current_mincut: f64) -> bool {
+    fn check_maturity(&self, _current_mincut: f64) -> bool {
         // Mature when connectivity target reached AND mincut is stable
         let connectivity = self.graph.num_edges() as f64
             / (self.graph.num_vertices() * (self.graph.num_vertices() - 1) / 2).max(1) as f64;
@@ -444,7 +451,7 @@ impl MorphogeneticSNN {
             return false;
         }
 
-        let recent: Vec<_> = self.mincut_history.iter().rev().take(20).cloned().collect();
+        let recent: Vec<_> = self.mincut_history.iter().rev().take(20).copied().collect();
         let mean = recent.iter().sum::<f64>() / recent.len() as f64;
         let variance =
             recent.iter().map(|&x| (x - mean).powi(2)).sum::<f64>() / recent.len() as f64;
@@ -481,7 +488,10 @@ impl MorphogeneticSNN {
 
     /// Get current activation pattern
     pub fn activation_pattern(&self) -> Vec<f64> {
-        self.neurons.iter().map(|n| n.net_activation()).collect()
+        self.neurons
+            .iter()
+            .map(MorphNeuronPair::net_activation)
+            .collect()
     }
 
     /// Detect pattern type from activation
@@ -508,8 +518,8 @@ impl MorphogeneticSNN {
             }
         }
 
-        local_corr /= count.max(1) as f64;
-        global_corr /= count.max(1) as f64;
+        local_corr /= f64::from(count.max(1));
+        global_corr /= f64::from(count.max(1));
 
         // Classify pattern
         if local_corr > 0.3 && global_corr < 0.1 {

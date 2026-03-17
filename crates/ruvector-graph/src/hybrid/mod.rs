@@ -18,7 +18,6 @@ pub use rag_integration::{Context, Evidence, RagConfig, RagEngine, ReasoningPath
 pub use semantic_search::{ClusterResult, SemanticPath, SemanticSearch, SemanticSearchConfig};
 pub use vector_index::{EmbeddingConfig, HybridIndex, VectorIndexType};
 
-use crate::error::Result;
 use serde::{Deserialize, Serialize};
 
 /// Hybrid query combining graph patterns and vector similarity

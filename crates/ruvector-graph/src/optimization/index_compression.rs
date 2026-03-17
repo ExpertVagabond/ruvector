@@ -34,7 +34,7 @@ impl CompressedIndex {
         let mut indexes = self.label_indexes.write();
         indexes
             .entry(label.to_string())
-            .or_insert_with(RoaringBitmap::new)
+            .or_default()
             .insert(node_id as u32);
     }
 

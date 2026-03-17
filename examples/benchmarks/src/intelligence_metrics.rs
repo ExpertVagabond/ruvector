@@ -241,7 +241,7 @@ impl Default for RobustnessMetrics {
 }
 
 /// Raw metrics from benchmarks
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct RawMetrics {
     /// Total tasks attempted
     pub tasks_attempted: usize,
@@ -271,27 +271,6 @@ pub struct RawMetrics {
     pub rollback_successes: usize,
     /// Attempted rollbacks from noisy to clean
     pub rollback_attempts: usize,
-}
-
-impl Default for RawMetrics {
-    fn default() -> Self {
-        Self {
-            tasks_attempted: 0,
-            tasks_completed: 0,
-            tasks_correct: 0,
-            total_steps: 0,
-            total_tool_calls: 0,
-            total_latency_ms: 0,
-            by_difficulty: HashMap::new(),
-            episodes: Vec::new(),
-            noise_tasks_attempted: 0,
-            noise_tasks_correct: 0,
-            policy_violations: 0,
-            contradictions: 0,
-            rollback_successes: 0,
-            rollback_attempts: 0,
-        }
-    }
 }
 
 /// Stats per difficulty level

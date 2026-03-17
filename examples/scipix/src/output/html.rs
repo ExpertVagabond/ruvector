@@ -70,7 +70,7 @@ impl HtmlFormatter {
 
         // Main content container
         html.push_str(r#"<div class="content">"#);
-        html.push_str("\n");
+        html.push('\n');
 
         // Format content
         if let Some(line_data) = lines {
@@ -89,13 +89,13 @@ impl HtmlFormatter {
     fn html_header(&self) -> String {
         let mut header = String::from("<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n");
         header.push_str(r#"    <meta charset="UTF-8">"#);
-        header.push_str("\n");
+        header.push('\n');
 
         if self.responsive {
             header.push_str(
                 r#"    <meta name="viewport" content="width=device-width, initial-scale=1.0">"#,
             );
-            header.push_str("\n");
+            header.push('\n');
         }
 
         header.push_str("    <title>Mathematical Content</title>\n");
@@ -104,27 +104,27 @@ impl HtmlFormatter {
         match self.engine {
             HtmlEngine::MathJax => {
                 header.push_str(r#"    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>"#);
-                header.push_str("\n");
+                header.push('\n');
                 header.push_str(r#"    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>"#);
-                header.push_str("\n");
+                header.push('\n');
                 header.push_str("    <script>\n");
                 header.push_str("    MathJax = {\n");
                 header.push_str("        tex: {\n");
                 header.push_str(r#"            inlineMath: [['$', '$'], ['\\(', '\\)']],"#);
-                header.push_str("\n");
+                header.push('\n');
                 header.push_str(r#"            displayMath: [['$$', '$$'], ['\\[', '\\]']]"#);
-                header.push_str("\n");
+                header.push('\n');
                 header.push_str("        }\n");
                 header.push_str("    };\n");
                 header.push_str("    </script>\n");
             }
             HtmlEngine::KaTeX => {
                 header.push_str(r#"    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">"#);
-                header.push_str("\n");
+                header.push('\n');
                 header.push_str(r#"    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>"#);
-                header.push_str("\n");
+                header.push('\n');
                 header.push_str(r#"    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>"#);
-                header.push_str("\n");
+                header.push('\n');
             }
             HtmlEngine::Raw => {
                 // No math rendering
@@ -247,7 +247,7 @@ impl HtmlFormatter {
                         r#"<img src="{}" alt="Image" loading="lazy">"#,
                         self.escape_html(&line.text)
                     ));
-                    html.push_str("\n");
+                    html.push('\n');
                 }
                 _ => {
                     html.push_str("<p>");

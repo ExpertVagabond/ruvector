@@ -4,7 +4,6 @@
 //! optimizing for different access patterns and sparsity levels.
 
 use alloc::vec::Vec;
-use core::marker::PhantomData;
 
 use crate::delta::{DeltaOp, DeltaValue, VectorDelta};
 use crate::error::{DeltaError, Result};
@@ -78,7 +77,7 @@ impl DeltaEncoding for DenseEncoding {
         match &delta.value {
             DeltaValue::Identity => {
                 // Write zeros
-                bytes.extend(core::iter::repeat(0u8).take(delta.dimensions * 4));
+                bytes.extend(std::iter::repeat_n(0u8, delta.dimensions * 4));
             }
             DeltaValue::Sparse(ops) => {
                 let mut values = vec![0.0f32; delta.dimensions];

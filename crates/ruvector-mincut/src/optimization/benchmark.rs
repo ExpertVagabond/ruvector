@@ -1,7 +1,7 @@
 //! Comprehensive Benchmark Suite for j-Tree + BMSSP Optimizations
 //!
 //! Measures before/after performance for each optimization:
-//! - DSpar: 5.9x target speedup
+//! - `DSpar`: 5.9x target speedup
 //! - Cache: 10x target for repeated queries
 //! - SIMD: 2-4x target for distance operations
 //! - Pool: 50-75% memory reduction
@@ -12,13 +12,13 @@
 
 use super::cache::{CacheConfig, PathDistanceCache};
 use super::dspar::{DegreePresparse, PresparseConfig};
-use super::parallel::{LevelUpdateResult, ParallelConfig, ParallelLevelUpdater, WorkItem};
+use super::parallel::{LevelUpdateResult, ParallelConfig, ParallelLevelUpdater};
 use super::pool::{LevelData, LevelPool, PoolConfig};
 use super::simd_distance::{DistanceArray, SimdDistanceOps};
 use super::wasm_batch::{BatchConfig, WasmBatchOps};
 use crate::graph::DynamicGraph;
 use std::collections::HashSet;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 /// Single benchmark result
 #[derive(Debug, Clone)]
@@ -47,6 +47,7 @@ pub struct BenchmarkResult {
 
 impl BenchmarkResult {
     /// Create new result
+    #[must_use]
     pub fn new(name: &str, baseline_us: u64, optimized_us: u64, target_speedup: f64) -> Self {
         let speedup = if optimized_us > 0 {
             baseline_us as f64 / optimized_us as f64
@@ -69,6 +70,7 @@ impl BenchmarkResult {
     }
 
     /// Set memory metrics
+    #[must_use]
     pub fn with_memory(mut self, baseline: usize, optimized: usize) -> Self {
         self.baseline_memory = baseline;
         self.optimized_memory = optimized;
@@ -124,6 +126,7 @@ pub struct BenchmarkSuite {
 
 impl BenchmarkSuite {
     /// Create new benchmark suite
+    #[must_use]
     pub fn new() -> Self {
         Self {
             sizes: vec![100, 1000, 10000],
@@ -133,12 +136,14 @@ impl BenchmarkSuite {
     }
 
     /// Set test sizes
+    #[must_use]
     pub fn with_sizes(mut self, sizes: Vec<usize>) -> Self {
         self.sizes = sizes;
         self
     }
 
     /// Set iterations
+    #[must_use]
     pub fn with_iterations(mut self, iterations: usize) -> Self {
         self.iterations = iterations;
         self
@@ -159,6 +164,7 @@ impl BenchmarkSuite {
     }
 
     /// Get combined speedup estimate
+    #[must_use]
     pub fn combined_speedup(&self) -> f64 {
         if self.results.is_empty() {
             return 1.0;
@@ -183,7 +189,7 @@ impl BenchmarkSuite {
         combined
     }
 
-    /// Benchmark DSpar (Degree-based presparse)
+    /// Benchmark `DSpar` (Degree-based presparse)
     fn benchmark_dspar(&self) -> OptimizationBenchmark {
         let mut results = Vec::new();
 
@@ -211,7 +217,7 @@ impl BenchmarkSuite {
             let opt_us = opt_start.elapsed().as_micros() as u64 / self.iterations as u64;
 
             let mut result = BenchmarkResult::new(
-                &format!("DSpar n={}", size),
+                &format!("DSpar n={size}"),
                 baseline_us,
                 opt_us,
                 5.9, // Target speedup
@@ -270,7 +276,7 @@ impl BenchmarkSuite {
             let opt_us = opt_start.elapsed().as_micros() as u64 / self.iterations as u64;
 
             let mut result = BenchmarkResult::new(
-                &format!("Cache n={}", size),
+                &format!("Cache n={size}"),
                 baseline_us,
                 opt_us,
                 10.0, // Target speedup for cached hits
@@ -323,7 +329,7 @@ impl BenchmarkSuite {
             let opt_us = opt_start.elapsed().as_micros() as u64 / self.iterations as u64;
 
             let result = BenchmarkResult::new(
-                &format!("SIMD find_min n={}", size),
+                &format!("SIMD find_min n={size}"),
                 baseline_us,
                 opt_us.max(1), // Avoid divide by zero
                 2.0,           // Target speedup
@@ -360,7 +366,7 @@ impl BenchmarkSuite {
             let opt_us = opt_start.elapsed().as_micros() as u64 / self.iterations as u64;
 
             let result = BenchmarkResult::new(
-                &format!("SIMD relax_batch n={}", size),
+                &format!("SIMD relax_batch n={size}"),
                 baseline_us,
                 opt_us.max(1),
                 2.0,
@@ -412,7 +418,7 @@ impl BenchmarkSuite {
             let stats = pool.stats();
 
             let mut result =
-                BenchmarkResult::new(&format!("Pool n={}", size), baseline_us, opt_us.max(1), 2.0);
+                BenchmarkResult::new(&format!("Pool n={size}"), baseline_us, opt_us.max(1), 2.0);
 
             result = result.with_memory(
                 baseline_memory * 10,  // Baseline: all levels materialized
@@ -481,7 +487,7 @@ impl BenchmarkSuite {
             let opt_us = opt_start.elapsed().as_micros() as u64 / self.iterations as u64;
 
             let result = BenchmarkResult::new(
-                &format!("Parallel n={}", size),
+                &format!("Parallel n={size}"),
                 baseline_us,
                 opt_us.max(1),
                 2.0, // Conservative target (depends on core count)
@@ -527,7 +533,7 @@ impl BenchmarkSuite {
             let stats = batch.stats();
 
             let mut result = BenchmarkResult::new(
-                &format!("WASM Batch n={}", size),
+                &format!("WASM Batch n={size}"),
                 baseline_us,
                 opt_us.max(1),
                 10.0,
@@ -542,11 +548,13 @@ impl BenchmarkSuite {
     }
 
     /// Get results
+    #[must_use]
     pub fn results(&self) -> &Vec<OptimizationBenchmark> {
         &self.results
     }
 
     /// Generate report string
+    #[must_use]
     pub fn report(&self) -> String {
         let mut report = String::new();
 
@@ -588,12 +596,12 @@ impl BenchmarkSuite {
                     }
                 ));
             }
-            report.push_str("\n");
+            report.push('\n');
         }
 
         let combined = self.combined_speedup();
-        report.push_str(&format!("## Combined Speedup Estimate: {:.2}x\n", combined));
-        report.push_str(&format!("   Target: 10x\n"));
+        report.push_str(&format!("## Combined Speedup Estimate: {combined:.2}x\n"));
+        report.push_str("   Target: 10x\n");
         report.push_str(&format!(
             "   Status: {}\n",
             if combined >= 10.0 {

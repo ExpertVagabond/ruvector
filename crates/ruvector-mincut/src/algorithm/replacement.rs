@@ -4,7 +4,7 @@
 //! Based on the level-based approach from dynamic connectivity literature.
 
 use crate::graph::VertexId;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 /// Edge identifier as (smaller, larger) vertex pair
 pub type EdgeKey = (VertexId, VertexId);
@@ -47,6 +47,7 @@ pub struct ReplacementEdgeIndex {
 
 impl ReplacementEdgeIndex {
     /// Create a new replacement edge index
+    #[must_use]
     pub fn new(n: usize) -> Self {
         // log₂(n) levels
         let max_level = (n as f64).log2().ceil() as usize + 1;
@@ -150,6 +151,7 @@ impl ReplacementEdgeIndex {
     ///
     /// # Complexity
     /// O(log n) - binary search through levels
+    #[must_use]
     pub fn find_replacement_fast(&self, smaller_component: &HashSet<VertexId>) -> Option<EdgeKey> {
         // Search levels from 0 (most edges) upward
         for level in 0..self.max_level {
@@ -279,8 +281,13 @@ impl ReplacementEdgeIndex {
     }
 
     /// Get statistics about the index
+    #[must_use]
     pub fn stats(&self) -> ReplacementIndexStats {
-        let edges_per_level: Vec<usize> = self.level_edges.iter().map(|s| s.len()).collect();
+        let edges_per_level: Vec<usize> = self
+            .level_edges
+            .iter()
+            .map(std::collections::BTreeSet::len)
+            .collect();
 
         ReplacementIndexStats {
             max_level: self.max_level,

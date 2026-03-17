@@ -360,7 +360,7 @@ impl MpsState {
                 "two-qubit gate requires distinct qubits".into(),
             ));
         }
-        let diff = if q1 > q2 { q1 - q2 } else { q2 - q1 };
+        let diff = q1.abs_diff(q2);
         if diff == 1 {
             return self.apply_two_qubit_gate_adjacent(q1, q2, matrix);
         }
@@ -695,7 +695,7 @@ impl MpsState {
                 }
                 r_data[k * cols + j] = dot;
                 for i in 0..rows {
-                    v[i] = v[i] - dot * q_cols[k][i];
+                    v[i] -= dot * q_cols[k][i];
                 }
             }
 

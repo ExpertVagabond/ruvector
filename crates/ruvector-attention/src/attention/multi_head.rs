@@ -33,7 +33,7 @@ impl MultiHeadAttention {
     /// Panics if `dim` is not divisible by `num_heads`.
     pub fn new(dim: usize, num_heads: usize) -> Self {
         assert!(
-            dim % num_heads == 0,
+            dim.is_multiple_of(num_heads),
             "Dimension {} must be divisible by number of heads {}",
             dim,
             num_heads

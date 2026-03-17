@@ -1,4 +1,4 @@
-//! RuVector Integration Layer
+//! `RuVector` Integration Layer
 //!
 //! Connects the minimum cut algorithm to the ruvector ecosystem.
 //! Provides seamless integration with vector databases and graph processing.
@@ -49,6 +49,7 @@ impl RuVectorGraphAnalyzer {
     /// Build graph from similarity matrix
     ///
     /// Creates edges between vectors with similarity above threshold
+    #[must_use]
     pub fn from_similarity_matrix(
         similarities: &[f64],
         num_vectors: usize,
@@ -69,6 +70,7 @@ impl RuVectorGraphAnalyzer {
     }
 
     /// Build k-NN graph from vectors
+    #[must_use]
     pub fn from_knn(neighbors: &[(usize, Vec<(usize, f64)>)]) -> Self {
         let graph = Arc::new(DynamicGraph::new());
 
@@ -122,6 +124,7 @@ impl RuVectorGraphAnalyzer {
     }
 
     /// Find bridge edges (edges whose removal disconnects graph)
+    #[must_use]
     pub fn find_bridges(&self) -> Vec<EdgeId> {
         let mut bridges = Vec::new();
 
@@ -237,6 +240,7 @@ impl CommunityDetector {
     }
 
     /// Get detected communities
+    #[must_use]
     pub fn communities(&self) -> &[Vec<VertexId>] {
         &self.communities
     }
@@ -258,6 +262,7 @@ impl GraphPartitioner {
     }
 
     /// Partition graph to minimize edge cuts
+    #[must_use]
     pub fn partition(&self) -> Vec<Vec<VertexId>> {
         let mut partitions = vec![Vec::new(); self.num_partitions];
         let vertices = self.graph.vertices();
@@ -308,6 +313,7 @@ impl GraphPartitioner {
     }
 
     /// Compute edge cut between partitions
+    #[must_use]
     pub fn edge_cut(&self, partitions: &[Vec<VertexId>]) -> usize {
         let mut partition_map = std::collections::HashMap::new();
         for (i, partition) in partitions.iter().enumerate() {

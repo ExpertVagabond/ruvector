@@ -14,7 +14,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 /// Unique identifier for vectors in the index
 pub type VectorId = u64;

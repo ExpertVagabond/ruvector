@@ -5,7 +5,6 @@
 
 use parking_lot::RwLock;
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 /// Type of event that occurred
@@ -81,6 +80,7 @@ pub struct Threshold {
 
 impl Threshold {
     /// Create a new threshold
+    #[must_use]
     pub fn new(value: f64, name: String, alert_below: bool) -> Self {
         Self {
             value,
@@ -216,6 +216,7 @@ pub struct MinCutMonitor {
 
 impl MinCutMonitor {
     /// Create a new monitor
+    #[must_use]
     pub fn new(config: MonitorConfig) -> Self {
         let now = Instant::now();
         Self {
@@ -317,7 +318,7 @@ impl MinCutMonitor {
         }
     }
 
-    /// Notify of a cut change (called by DynamicMinCut)
+    /// Notify of a cut change (called by `DynamicMinCut`)
     pub fn notify(&self, old_value: f64, new_value: f64, edge: Option<(u64, u64)>) {
         let now = Instant::now();
 
@@ -554,7 +555,7 @@ impl MinCutMonitor {
     }
 }
 
-/// Builder for MinCutMonitor
+/// Builder for `MinCutMonitor`
 pub struct MonitorBuilder {
     config: MonitorConfig,
     thresholds: Vec<Threshold>,
@@ -563,6 +564,7 @@ pub struct MonitorBuilder {
 
 impl MonitorBuilder {
     /// Create a new monitor builder
+    #[must_use]
     pub fn new() -> Self {
         Self {
             config: MonitorConfig::default(),
@@ -572,12 +574,14 @@ impl MonitorBuilder {
     }
 
     /// Set the monitor configuration
+    #[must_use]
     pub fn with_config(mut self, config: MonitorConfig) -> Self {
         self.config = config;
         self
     }
 
     /// Add a threshold that alerts when cut goes below the given value
+    #[must_use]
     pub fn threshold_below(mut self, value: f64, name: &str) -> Self {
         self.thresholds
             .push(Threshold::new(value, name.to_string(), true));
@@ -585,6 +589,7 @@ impl MonitorBuilder {
     }
 
     /// Add a threshold that alerts when cut goes above the given value
+    #[must_use]
     pub fn threshold_above(mut self, value: f64, name: &str) -> Self {
         self.thresholds
             .push(Threshold::new(value, name.to_string(), false));
@@ -612,6 +617,7 @@ impl MonitorBuilder {
     }
 
     /// Build the monitor
+    #[must_use]
     pub fn build(self) -> MinCutMonitor {
         let monitor = MinCutMonitor::new(self.config);
 

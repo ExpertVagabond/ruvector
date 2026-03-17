@@ -57,7 +57,7 @@
 //! ```
 
 use crate::error::{MinCutError, Result};
-use crate::graph::{DynamicGraph, EdgeId, VertexId, Weight};
+use crate::graph::{DynamicGraph, EdgeId, VertexId};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::Arc;
 
@@ -100,11 +100,13 @@ impl ExpanderComponent {
     }
 
     /// Check if this component contains a vertex
+    #[must_use]
     pub fn contains(&self, v: VertexId) -> bool {
         self.vertices.contains(&v)
     }
 
     /// Get the size of this component
+    #[must_use]
     pub fn size(&self) -> usize {
         self.vertices.len()
     }
@@ -146,8 +148,7 @@ impl ExpanderDecomposition {
     pub fn build(graph: Arc<DynamicGraph>, phi: Conductance) -> Result<Self> {
         if phi <= 0.0 || phi >= 1.0 {
             return Err(MinCutError::InvalidParameter(format!(
-                "Conductance phi must be in (0, 1), got {}",
-                phi
+                "Conductance phi must be in (0, 1), got {phi}"
             )));
         }
 
@@ -166,6 +167,7 @@ impl ExpanderDecomposition {
     }
 
     /// Get component containing vertex at given level
+    #[must_use]
     pub fn component_at_level(&self, v: VertexId, level: usize) -> Option<&ExpanderComponent> {
         if level >= self.levels.len() {
             return None;
@@ -186,17 +188,7 @@ impl ExpanderDecomposition {
                 self.vertex_to_component[level].get(&v),
             ) {
                 // If edge crosses components, update boundary edges
-                if u_comp_id != v_comp_id {
-                    // Find the edge ID
-                    if let Some(edge) = self.graph.get_edge(u, v) {
-                        // Add to boundary edges of both components
-                        for comp in &mut self.levels[level] {
-                            if comp.id == *u_comp_id || comp.id == *v_comp_id {
-                                comp.boundary_edges.push(edge.id);
-                            }
-                        }
-                    }
-                } else {
+                if u_comp_id == v_comp_id {
                     // Edge within component - may affect conductance
                     let comp_id = *u_comp_id;
                     // Clone vertices to avoid borrow checker issues
@@ -210,6 +202,16 @@ impl ExpanderDecomposition {
                         {
                             comp.conductance = conductance;
                             comp.volume = volume;
+                        }
+                    }
+                } else {
+                    // Find the edge ID
+                    if let Some(edge) = self.graph.get_edge(u, v) {
+                        // Add to boundary edges of both components
+                        for comp in &mut self.levels[level] {
+                            if comp.id == *u_comp_id || comp.id == *v_comp_id {
+                                comp.boundary_edges.push(edge.id);
+                            }
                         }
                     }
                 }
@@ -258,6 +260,7 @@ impl ExpanderDecomposition {
     }
 
     /// Get number of levels in the decomposition
+    #[must_use]
     pub fn num_levels(&self) -> usize {
         self.levels.len()
     }

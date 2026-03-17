@@ -16,19 +16,19 @@
 //! STDP learning rule naturally encodes this!
 //! ```
 //!
-//! After learning, W_AB reflects causal strength A→B
+//! After learning, `W_AB` reflects causal strength A→B
 //!
-//! ## MinCut Application
+//! ## `MinCut` Application
 //!
-//! MinCut on the causal graph reveals optimal intervention points -
+//! `MinCut` on the causal graph reveals optimal intervention points -
 //! minimum changes needed to affect outcomes.
 
 use super::{
     neuron::{LIFNeuron, NeuronConfig, SpikeTrain},
-    synapse::{AsymmetricSTDP, STDPConfig, Synapse, SynapseMatrix},
-    SimTime, Spike,
+    synapse::{AsymmetricSTDP, SynapseMatrix},
+    SimTime,
 };
-use crate::graph::{DynamicGraph, EdgeId, VertexId};
+use crate::graph::{DynamicGraph, VertexId};
 use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Configuration for causal discovery
@@ -98,6 +98,7 @@ pub struct CausalGraph {
 
 impl CausalGraph {
     /// Create a new empty causal graph
+    #[must_use]
     pub fn new(num_nodes: usize) -> Self {
         Self {
             num_nodes,
@@ -123,19 +124,20 @@ impl CausalGraph {
 
         self.adjacency
             .entry(source)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push((target, strength, relation));
     }
 
     /// Get edges from a node
+    #[must_use]
     pub fn edges_from(&self, source: usize) -> &[(usize, f64, CausalRelation)] {
         self.adjacency
             .get(&source)
-            .map(|v| v.as_slice())
-            .unwrap_or(&[])
+            .map_or(&[], std::vec::Vec::as_slice)
     }
 
     /// Get all edges
+    #[must_use]
     pub fn edges(&self) -> &[CausalEdge] {
         &self.edges
     }
@@ -146,7 +148,8 @@ impl CausalGraph {
     /// Compute transitive closure (indirect causation)
     ///
     /// Uses Floyd-Warshall algorithm with O(n³) complexity.
-    /// Limited to MAX_CLOSURE_NODES to prevent DoS.
+    /// Limited to `MAX_CLOSURE_NODES` to prevent `DoS`.
+    #[must_use]
     pub fn transitive_closure(&self) -> Self {
         let mut closed = Self::new(self.num_nodes);
 
@@ -193,8 +196,7 @@ impl CausalGraph {
                             .adjacency
                             .get(&i)
                             .and_then(|edges| edges.iter().find(|(t, _, _)| *t == j))
-                            .map(|(_, s, _)| *s)
-                            .unwrap_or(0.0);
+                            .map_or(0.0, |(_, s, _)| *s);
 
                         if indirect_strength > existing {
                             closed.add_edge(i, j, indirect_strength, CausalRelation::Causes);
@@ -208,6 +210,7 @@ impl CausalGraph {
     }
 
     /// Find nodes reachable from a source
+    #[must_use]
     pub fn reachable_from(&self, source: usize) -> HashSet<usize> {
         let mut visited = HashSet::new();
         let mut queue = VecDeque::new();
@@ -227,6 +230,7 @@ impl CausalGraph {
     }
 
     /// Convert to undirected graph for mincut analysis
+    #[must_use]
     pub fn to_undirected(&self) -> DynamicGraph {
         let graph = DynamicGraph::new();
 
@@ -262,7 +266,7 @@ pub enum GraphEventType {
     EdgeDelete,
     /// Edge weight changed
     WeightChange,
-    /// MinCut value changed
+    /// `MinCut` value changed
     MinCutChange,
     /// Component split
     ComponentSplit,
@@ -292,6 +296,7 @@ pub struct CausalDiscoverySNN {
 
 impl CausalDiscoverySNN {
     /// Create a new causal discovery SNN
+    #[must_use]
     pub fn new(config: CausalConfig) -> Self {
         let n = config.num_event_types;
 
@@ -330,7 +335,7 @@ impl CausalDiscoverySNN {
             (GraphEventType::ComponentMerge, 5),
         ]
         .iter()
-        .cloned()
+        .copied()
         .collect();
 
         let index_to_event: HashMap<_, _> = event_type_map.iter().map(|(k, v)| (*v, *k)).collect();
@@ -382,7 +387,7 @@ impl CausalDiscoverySNN {
 
     /// Decay all synaptic weights toward baseline
     ///
-    /// Applies exponential decay: w' = w * (1 - decay_rate) + baseline * decay_rate
+    /// Applies exponential decay: w' = w * (1 - `decay_rate`) + baseline * `decay_rate`
     pub fn decay_weights(&mut self) {
         let decay = self.config.decay_rate;
         let baseline = 0.5; // Neutral weight
@@ -400,6 +405,7 @@ impl CausalDiscoverySNN {
     }
 
     /// Extract causal graph from learned weights
+    #[must_use]
     pub fn extract_causal_graph(&self) -> CausalGraph {
         let n = self.config.num_event_types;
         let mut graph = CausalGraph::new(n);
@@ -422,19 +428,20 @@ impl CausalDiscoverySNN {
         graph
     }
 
-    /// Find optimal intervention points using MinCut on causal graph
+    /// Find optimal intervention points using `MinCut` on causal graph
+    #[must_use]
     pub fn optimal_intervention_points(
         &self,
         controllable: &[usize],
         targets: &[usize],
     ) -> Vec<usize> {
         let causal = self.extract_causal_graph();
-        let undirected = causal.to_undirected();
+        let _undirected = causal.to_undirected();
 
         // Simple heuristic: find nodes on paths from controllable to targets
         let mut intervention_points = Vec::new();
-        let controllable_set: HashSet<_> = controllable.iter().cloned().collect();
-        let target_set: HashSet<_> = targets.iter().cloned().collect();
+        let controllable_set: HashSet<_> = controllable.iter().copied().collect();
+        let target_set: HashSet<_> = targets.iter().copied().collect();
 
         for edge in causal.edges() {
             // If edge connects controllable region to target region
@@ -443,12 +450,13 @@ impl CausalDiscoverySNN {
             }
         }
 
-        intervention_points.sort();
+        intervention_points.sort_unstable();
         intervention_points.dedup();
         intervention_points
     }
 
     /// Get causal strength between two event types
+    #[must_use]
     pub fn causal_strength(&self, from: GraphEventType, to: GraphEventType) -> f64 {
         let i = self.event_type_map.get(&from).copied().unwrap_or(0);
         let j = self.event_type_map.get(&to).copied().unwrap_or(0);
@@ -457,6 +465,7 @@ impl CausalDiscoverySNN {
     }
 
     /// Get all direct causes of an event type
+    #[must_use]
     pub fn direct_causes(&self, event_type: GraphEventType) -> Vec<(GraphEventType, f64)> {
         let j = self.event_type_map.get(&event_type).copied().unwrap_or(0);
         let mut causes = Vec::new();
@@ -477,6 +486,7 @@ impl CausalDiscoverySNN {
     }
 
     /// Get all direct effects of an event type
+    #[must_use]
     pub fn direct_effects(&self, event_type: GraphEventType) -> Vec<(GraphEventType, f64)> {
         let i = self.event_type_map.get(&event_type).copied().unwrap_or(0);
         let mut effects = Vec::new();
@@ -519,6 +529,7 @@ impl CausalDiscoverySNN {
     }
 
     /// Get summary statistics
+    #[must_use]
     pub fn summary(&self) -> CausalSummary {
         let causal = self.extract_causal_graph();
 

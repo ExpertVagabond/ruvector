@@ -10,22 +10,17 @@ use crate::encoding::{DeltaEncoding, HybridEncoding};
 use crate::error::{DeltaError, Result};
 
 /// Compression level settings
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CompressionLevel {
     /// No compression
     None,
     /// Fast compression (lower ratio)
     Fast,
     /// Balanced compression
+    #[default]
     Balanced,
     /// Best compression (slower)
     Best,
-}
-
-impl Default for CompressionLevel {
-    fn default() -> Self {
-        Self::Balanced
-    }
 }
 
 /// Compression codec types

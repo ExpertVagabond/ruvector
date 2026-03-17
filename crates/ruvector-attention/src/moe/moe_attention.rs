@@ -83,7 +83,7 @@ impl MoEAttention {
         let mut experts: Vec<Box<dyn Expert>> = Vec::new();
 
         // Ensure we have at least num_experts
-        let num_each = (config.num_experts + 2) / 3;
+        let num_each = config.num_experts.div_ceil(3);
 
         for _ in 0..num_each {
             experts.push(Box::new(StandardExpert::new(config.dim)));

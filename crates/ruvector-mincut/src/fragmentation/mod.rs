@@ -15,7 +15,7 @@
 //! - **Expander detection**: Identifies well-connected subgraphs
 
 use crate::graph::{VertexId, Weight};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet};
 
 /// Configuration for the fragmentation algorithm
 #[derive(Debug, Clone)]
@@ -64,6 +64,7 @@ pub struct Fragment {
 
 impl Fragment {
     /// Create new fragment
+    #[must_use]
     pub fn new(id: u64, vertices: HashSet<VertexId>) -> Self {
         Self {
             id,
@@ -78,16 +79,19 @@ impl Fragment {
     }
 
     /// Get fragment size (number of vertices)
+    #[must_use]
     pub fn size(&self) -> usize {
         self.vertices.len()
     }
 
     /// Check if vertex is in this fragment
+    #[must_use]
     pub fn contains(&self, v: VertexId) -> bool {
         self.vertices.contains(&v)
     }
 
     /// Compute boundary sparsity: |boundary| / volume
+    #[must_use]
     pub fn boundary_sparsity(&self) -> f64 {
         if self.volume == 0 {
             return 0.0;
@@ -128,6 +132,7 @@ pub struct Fragmentation {
 
 impl Fragmentation {
     /// Create new fragmentation structure
+    #[must_use]
     pub fn new(config: FragmentationConfig) -> Self {
         Self {
             config,
@@ -140,6 +145,7 @@ impl Fragmentation {
     }
 
     /// Create with default config
+    #[must_use]
     pub fn with_defaults() -> Self {
         Self::new(FragmentationConfig::default())
     }
@@ -161,11 +167,13 @@ impl Fragmentation {
     }
 
     /// Get all vertices
+    #[must_use]
     pub fn vertices(&self) -> Vec<VertexId> {
         self.adjacency.keys().copied().collect()
     }
 
     /// Get neighbors of a vertex
+    #[must_use]
     pub fn neighbors(&self, v: VertexId) -> Vec<(VertexId, Weight)> {
         self.adjacency
             .get(&v)
@@ -174,8 +182,11 @@ impl Fragmentation {
     }
 
     /// Compute degree of a vertex
+    #[must_use]
     pub fn degree(&self, v: VertexId) -> usize {
-        self.adjacency.get(&v).map_or(0, |n| n.len())
+        self.adjacency
+            .get(&v)
+            .map_or(0, std::collections::HashMap::len)
     }
 
     /// Run the fragmentation algorithm to decompose the graph
@@ -311,6 +322,7 @@ impl Fragmentation {
     /// 1. Start with high-degree vertices
     /// 2. Greedily expand the set
     /// 3. Stop when boundary becomes sparse relative to volume
+    #[must_use]
     pub fn trim(&self, vertices: &[VertexId]) -> TrimResult {
         if vertices.is_empty() {
             return TrimResult {
@@ -409,6 +421,7 @@ impl Fragmentation {
     ///
     /// A graph is a φ-expander if every cut (S, S̄) has:
     /// |∂S| ≥ φ · min(vol(S), vol(S̄))
+    #[must_use]
     pub fn is_expander(&self, fragment_id: u64) -> bool {
         let fragment = match self.fragments.get(&fragment_id) {
             Some(f) => f,
@@ -446,11 +459,13 @@ impl Fragmentation {
     }
 
     /// Get a fragment by ID
+    #[must_use]
     pub fn get_fragment(&self, id: u64) -> Option<&Fragment> {
         self.fragments.get(&id)
     }
 
     /// Get fragment containing a vertex
+    #[must_use]
     pub fn get_vertex_fragment(&self, v: VertexId) -> Option<&Fragment> {
         self.vertex_fragment
             .get(&v)
@@ -458,6 +473,7 @@ impl Fragmentation {
     }
 
     /// Get all leaf fragments (no children)
+    #[must_use]
     pub fn leaf_fragments(&self) -> Vec<&Fragment> {
         self.fragments
             .values()
@@ -466,11 +482,13 @@ impl Fragmentation {
     }
 
     /// Get total number of fragments
+    #[must_use]
     pub fn num_fragments(&self) -> usize {
         self.fragments.len()
     }
 
     /// Get the fragment hierarchy depth
+    #[must_use]
     pub fn max_depth(&self) -> usize {
         fn depth_of(fragments: &HashMap<u64, Fragment>, id: u64) -> usize {
             match fragments.get(&id) {

@@ -299,7 +299,7 @@ impl FragmentingAlgorithm {
     ) -> u64 {
         let mut boundary = 0u64;
 
-        for edge in self.graph.edges().into_iter() {
+        for edge in self.graph.edges() {
             // Only count edges within the fragment
             if !fragment.contains(&edge.source) || !fragment.contains(&edge.target) {
                 continue;
@@ -329,7 +329,7 @@ impl FragmentingAlgorithm {
                 // Merge fragments
                 self.merge_fragments(uf, vf);
             }
-            (None, Some(_)) | (Some(_), None) | (None, None) => {
+            (None, Some(_) | None) | (Some(_), None) => {
                 // New vertex or edge - rebuild
                 self.rebuild();
             }
@@ -345,12 +345,12 @@ impl FragmentingAlgorithm {
         self.connectivity.delete_edge(u, v);
 
         // Check if this splits a fragment
-        if !self.connectivity.connected(u, v) {
-            // Fragment split - rebuild
-            self.rebuild();
-        } else {
+        if self.connectivity.connected(u, v) {
             // Same fragment - update min cut
             self.update_fragment_containing(u);
+        } else {
+            // Fragment split - rebuild
+            self.rebuild();
         }
     }
 
@@ -385,6 +385,7 @@ impl FragmentingAlgorithm {
     }
 
     /// Query the current result
+    #[must_use]
     pub fn query(&self) -> FragmentResult {
         if self.fragments.len() <= 1 {
             if let Some(frag) = self.fragments.first() {
@@ -411,11 +412,13 @@ impl FragmentingAlgorithm {
     }
 
     /// Get number of fragments
+    #[must_use]
     pub fn num_fragments(&self) -> usize {
         self.fragments.len()
     }
 
     /// Is graph connected?
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         self.fragments.len() <= 1
     }

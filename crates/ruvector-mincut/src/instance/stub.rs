@@ -1,4 +1,4 @@
-//! Stub implementation of ProperCutInstance
+//! Stub implementation of `ProperCutInstance`
 //!
 //! Brute-force reference implementation for testing.
 //! Recomputes minimum cut on every query - O(2^n) worst case.
@@ -26,7 +26,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 /// # Purpose
 ///
 /// Used as a reference implementation to test the wrapper logic
-/// before the real LocalKCut algorithm is ready.
+/// before the real `LocalKCut` algorithm is ready.
 pub struct StubInstance {
     /// Lambda bounds
     lambda_min: u64,
@@ -35,7 +35,7 @@ pub struct StubInstance {
     edges: Vec<(VertexId, VertexId, EdgeId)>,
     /// Vertex set
     vertices: HashSet<VertexId>,
-    /// Adjacency list: vertex -> [(neighbor, edge_id), ...]
+    /// Adjacency list: vertex -> [(neighbor, `edge_id`), ...]
     adjacency: HashMap<VertexId, Vec<(VertexId, EdgeId)>>,
 }
 
@@ -65,7 +65,8 @@ impl StubInstance {
 
     /// Create an empty stub instance for use with the wrapper
     ///
-    /// The wrapper will apply all edges via apply_inserts/apply_deletes.
+    /// The wrapper will apply all edges via `apply_inserts/apply_deletes`.
+    #[must_use]
     pub fn new_empty(lambda_min: u64, lambda_max: u64) -> Self {
         Self {
             lambda_min,
@@ -193,7 +194,7 @@ impl StubInstance {
 
     /// Compute boundary of a vertex set
     ///
-    /// Returns (boundary_value, boundary_edges).
+    /// Returns (`boundary_value`, `boundary_edges`).
     /// Boundary = edges with exactly one endpoint in the set.
     fn compute_boundary(&self, set: &HashSet<VertexId>) -> (u64, Vec<EdgeId>) {
         let mut boundary_value = 0u64;
@@ -223,15 +224,9 @@ impl StubInstance {
         self.adjacency.clear();
 
         for &(u, v, edge_id) in &self.edges {
-            self.adjacency
-                .entry(u)
-                .or_insert_with(Vec::new)
-                .push((v, edge_id));
+            self.adjacency.entry(u).or_default().push((v, edge_id));
 
-            self.adjacency
-                .entry(v)
-                .or_insert_with(Vec::new)
-                .push((u, edge_id));
+            self.adjacency.entry(v).or_default().push((u, edge_id));
         }
     }
 

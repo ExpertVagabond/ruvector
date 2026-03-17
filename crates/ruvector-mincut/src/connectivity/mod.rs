@@ -90,6 +90,7 @@ impl DynamicConnectivity {
     /// let dc = DynamicConnectivity::new();
     /// assert_eq!(dc.component_count(), 0);
     /// ```
+    #[must_use]
     pub fn new() -> Self {
         Self {
             parent: HashMap::new(),
@@ -119,8 +120,8 @@ impl DynamicConnectivity {
     /// assert_eq!(dc.component_count(), 1);
     /// ```
     pub fn add_vertex(&mut self, v: VertexId) {
-        if !self.parent.contains_key(&v) {
-            self.parent.insert(v, v);
+        if let std::collections::hash_map::Entry::Vacant(e) = self.parent.entry(v) {
+            e.insert(v);
             self.rank.insert(v, 0);
             self.vertex_count += 1;
             self.component_count += 1;
@@ -233,6 +234,7 @@ impl DynamicConnectivity {
     /// dc.insert_edge(0, 1);
     /// assert!(dc.is_connected());
     /// ```
+    #[must_use]
     pub fn is_connected(&self) -> bool {
         self.component_count == 1
     }
@@ -276,6 +278,7 @@ impl DynamicConnectivity {
     /// Returns None if ETT is out of sync and result is unreliable.
     /// Use `connected()` for the reliable version.
     #[inline]
+    #[must_use]
     pub fn connected_fast(&self, u: VertexId, v: VertexId) -> Option<bool> {
         if !self.ett_synced {
             return None;
@@ -288,6 +291,7 @@ impl DynamicConnectivity {
     /// # Returns
     ///
     /// The current number of connected components
+    #[must_use]
     pub fn component_count(&self) -> usize {
         self.component_count
     }
@@ -297,6 +301,7 @@ impl DynamicConnectivity {
     /// # Returns
     ///
     /// The current number of vertices
+    #[must_use]
     pub fn vertex_count(&self) -> usize {
         self.vertex_count
     }
@@ -317,13 +322,13 @@ impl DynamicConnectivity {
     fn find(&mut self, v: VertexId) -> VertexId {
         let parent = *self.parent.get(&v).expect("Vertex not found");
 
-        if parent != v {
+        if parent == v {
+            v
+        } else {
             // Path compression: make v point directly to root
             let root = self.find(parent);
             self.parent.insert(v, root);
             root
-        } else {
-            v
         }
     }
 
