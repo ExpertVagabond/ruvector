@@ -1,4 +1,14 @@
 //! Ruvector CLI - High-performance vector database command-line interface
+//!
+//! # Security
+//!
+//! - All file paths validated via clap argument parsing (no shell expansion)
+//! - Database file access uses safe Rust I/O (no raw pointer manipulation)
+//! - Vector query inputs parsed with bounds checking (dimension validation)
+//! - Import sources validated against known formats before processing
+
+#![deny(clippy::arithmetic_side_effects)]
+#![forbid(unsafe_code)]
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
