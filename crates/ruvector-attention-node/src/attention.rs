@@ -64,7 +64,31 @@ impl DotProductAttention {
         keys: Vec<Float32Array>,
         values: Vec<Float32Array>,
     ) -> Result<Float32Array> {
+        // Input validation
+        if keys.is_empty() || values.is_empty() {
+            return Err(Error::from_reason("keys and values arrays cannot be empty"));
+        }
+        if keys.len() != values.len() {
+            return Err(Error::from_reason(format!(
+                "keys length ({}) must match values length ({})",
+                keys.len(),
+                values.len()
+            )));
+        }
+        // Validate dimension consistency
         let query_slice = query.as_ref();
+        let expected_dim = self.inner.dim();
+        if query_slice.len() != expected_dim {
+            return Err(Error::from_reason(format!(
+                "query dimension ({}) does not match expected dimension ({})",
+                query_slice.len(),
+                expected_dim
+            )));
+        }
+        // Check for NaN/Inf in query
+        if query_slice.iter().any(|v| !v.is_finite()) {
+            return Err(Error::from_reason("query contains NaN or Inf values"));
+        }
         let keys_vec: Vec<Vec<f32>> = keys.into_iter().map(|k| k.to_vec()).collect();
         let values_vec: Vec<Vec<f32>> = values.into_iter().map(|v| v.to_vec()).collect();
         let keys_refs: Vec<&[f32]> = keys_vec.iter().map(|k| k.as_slice()).collect();
@@ -93,6 +117,20 @@ impl DotProductAttention {
         values: Vec<Float32Array>,
         mask: Vec<bool>,
     ) -> Result<Float32Array> {
+        // Input validation
+        if keys.is_empty() || values.is_empty() {
+            return Err(Error::from_reason("keys and values arrays cannot be empty"));
+        }
+        if keys.len() != values.len() {
+            return Err(Error::from_reason("keys and values must have matching lengths"));
+        }
+        if mask.len() != keys.len() {
+            return Err(Error::from_reason(format!(
+                "mask length ({}) must match keys length ({})",
+                mask.len(),
+                keys.len()
+            )));
+        }
         let query_slice = query.as_ref();
         let keys_vec: Vec<Vec<f32>> = keys.into_iter().map(|k| k.to_vec()).collect();
         let values_vec: Vec<Vec<f32>> = values.into_iter().map(|v| v.to_vec()).collect();
@@ -131,6 +169,12 @@ impl MultiHeadAttention {
     /// * `num_heads` - Number of attention heads
     #[napi(constructor)]
     pub fn new(dim: u32, num_heads: u32) -> Result<Self> {
+        if dim == 0 {
+            return Err(Error::from_reason("Dimension must be greater than 0"));
+        }
+        if num_heads == 0 {
+            return Err(Error::from_reason("Number of heads must be greater than 0"));
+        }
         let d = dim as usize;
         let h = num_heads as usize;
 
