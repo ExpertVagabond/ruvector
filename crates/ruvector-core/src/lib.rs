@@ -39,6 +39,12 @@
 #![warn(clippy::all)]
 #![allow(clippy::incompatible_msrv)]
 
+// ── Security Constants ──────────────────────────────────────────────────────
+/// Maximum vector dimension allowed. Prevents allocation bombs from untrusted input.
+pub const MAX_VECTOR_DIM: usize = 65_536;
+/// Maximum number of vectors per collection before requiring explicit capacity override.
+pub const MAX_COLLECTION_SIZE: usize = 100_000_000;
+
 pub mod advanced_features;
 
 // AgenticDB requires storage feature
@@ -118,6 +124,17 @@ const _: () = {
 pub use error::{Result, RuvectorError};
 pub use types::{DistanceMetric, SearchQuery, SearchResult, VectorEntry, VectorId};
 pub use vector_db::VectorDB;
+
+/// Validate vector dimensions before insertion — rejects zero-length and oversized vectors.
+#[inline]
+pub fn validate_dimensions(dim: usize) -> Result<()> {
+    if dim == 0 || dim > MAX_VECTOR_DIM {
+        return Err(RuvectorError::InvalidDimension(
+            format!("dimension {dim} out of range (1..={MAX_VECTOR_DIM})")
+        ));
+    }
+    Ok(())
+}
 
 // Quantization types (ADR-001)
 pub use quantization::{
