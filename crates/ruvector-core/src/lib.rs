@@ -2,6 +2,16 @@
 //!
 //! High-performance Rust-native vector database with HNSW indexing and SIMD-optimized operations.
 //!
+//! ## Security Architecture
+//!
+//! - **Memory safety**: All vector operations bounds-checked; no unsafe indexing
+//! - **Input validation**: Dimension limits enforced on all vector insertions
+//! - **Multi-tenant isolation**: Collection-level access boundaries via [`collections`]
+//! - **Persistence integrity**: REDB transactions are atomic with CRC verification
+//! - **No network surface**: Core library is offline-only; networking is opt-in via `ruvector-server`
+//! - **Dependency hygiene**: Minimal unsafe code; SIMD operations use audited SimSIMD bindings
+//! - **Resource limits**: Memory pool caps via ADR-006 prevent unbounded allocation
+//!
 //! ## Working Features (Tested & Benchmarked)
 //!
 //! - **HNSW Indexing**: Approximate nearest neighbor search with O(log n) complexity
@@ -10,9 +20,9 @@
 //! - **Persistence**: REDB-based storage with config persistence
 //! - **Search**: ~2.5K queries/sec on 10K vectors (benchmarked)
 //!
-//! ## ⚠️ Experimental/Incomplete Features - READ BEFORE USE
+//! ## Experimental/Incomplete Features - READ BEFORE USE
 //!
-//! - **AgenticDB**: ⚠️⚠️⚠️ **CRITICAL WARNING** ⚠️⚠️⚠️
+//! - **AgenticDB**: **CRITICAL WARNING**
 //!   - Uses PLACEHOLDER hash-based embeddings, NOT real semantic embeddings
 //!   - "dog" and "cat" will NOT be similar (different characters)
 //!   - "dog" and "god" WILL be similar (same characters) - **This is wrong!**
