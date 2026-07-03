@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Attribution:** This repository is a copy of [ruvnet/ruvector](https://github.com/ruvnet/ruvector) by rUv — it is **not an original project of this account**. Local additions are limited to a handful of security-lint/validation patches (March 2026). For the canonical, actively maintained project, use the upstream repo.
+
 # RuVector — A Self-Learning, Agentic Operating System
 [![CES 2026 Innovation Award](https://img.shields.io/badge/🏅_CES_2026-Innovation_Award-gold.svg)](https://cognitum.one)
 [![GitHub Trending](https://img.shields.io/badge/🔥_GitHub-Trending-orange.svg)](https://github.com/ruvnet/ruvector)
